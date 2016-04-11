@@ -16,15 +16,15 @@ etc 			.*
 */
 %%
 
-("abre")	                            {return del_bloco_abre;}
+("abre")	                        {return del_bloco_abre;}
 ("fecha")                               {return del_bloco_fecha;}
 ("int"|"float"|"char")                  {return tipo;}
-[a-z]{1,8} 			                    {return id;}
-[0-9]+(".")[0-9]*|[0-9]*(".")[0-9]+ 	{return flutuante;}
-("<-") 		                            {return op_atrib;}
-("+"|"/"|"*") 		                    {return op_arit;}
+[a-z]{1,8} 			        {return id;}
+[0-9]+(".")*[0-9]*|[0-9]*(".")[0-9]+ 	{return flutuante;}
+("<-") 		                        {return op_atrib;}
+("+"|"/"|"*") 		                {return op_arit;}
 ("<"|">")                               {return op_relacional;}
-[ \t\r]+		                        {;}
-.|\n		                            {return yytext[0];}
+[ \t\r]+		                {;}
+.|\n		                        {return yytext[0];}
 
 %%

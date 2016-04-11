@@ -7,7 +7,9 @@
 %token flutuante
 %token op_atrib
 %token op_arit
+%left op_arit
 %token op_relacional
+%left op_relacional
 %token del_bloco_abre
 %token del_bloco_fecha
 %token tipo
@@ -33,9 +35,10 @@ exp_atrib: op_atrib exp {;}
 
 exp: flutuante {;}
 | id {;}
-| exp op_arit exp {;};
+| exp op_arit exp {;}
+| relacao {;}; 
 
-//relacao: exp op_relacional exp {;}
+relacao: exp op_relacional exp {;}
 
 declaracao: tipo id {;}
 | tipo id exp_atrib {;};
