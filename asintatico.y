@@ -13,23 +13,26 @@
 %token del_bloco_abre
 %token del_bloco_fecha
 %token tipo
+%token var
+%token branco
 
 %%
 /* Regras definindo a GLC e acoes correspondentes */
-/* neste nosso exemplo quase todas as acoes estao vazias */
-input: /* empty */
-| input line;
+programa: del_bloco_abre lista_cmds del_bloco_fecha {;}
+| variaveis del_bloco_abre lista_cmds del_bloco_fecha {;};
 
-line:'\n'
-| programa '\n'  { printf ("Programa sintaticamente correto!\n"); };
+variaveis: var del_bloco_abre lista_decl_var del_bloco_fecha {;};
 
-programa: del_bloco_abre lista_cmds del_bloco_fecha {;};
+lista_decl_var: declaracao_var {;}
+| declaracao_var ';' lista_decl_var {;};
+
+declaracao_var: tipo id {;}
+| tipo id exp_atrib {;};
 
 lista_cmds:	cmd	{;}
 | cmd ';' lista_cmds {;};
 
-cmd: id exp_atrib {;}
-| declaracao {;};
+cmd: id exp_atrib {;} ;
 
 exp_atrib: op_atrib exp {;}
 
@@ -39,9 +42,6 @@ exp: flutuante {;}
 | relacao {;}; 
 
 relacao: exp op_relacional exp {;}
-
-declaracao: tipo id {;}
-| tipo id exp_atrib {;};
 %%
 
 void file_string(char* arquivo)
@@ -59,19 +59,25 @@ void file_string(char* arquivo)
 		free(line);    // dont forget to free heap memory
 	}
 }
-
+extern FILE *yyin;
 int main (int argc, char *argv[]) 
 {
+	int erro;
 	if(argc < 2)
 	{
 		perror("Too few argc\n");
 		return -1;
 	}
-	file_string(argv[1]);
+	yyin = fopen(argv[1],"r");
+	if(yyin)
+	{
+		erro = yyparse();
+		if(!erro)
+			printf("PROGRAMA TA MASSA\n");
+	}
 	return 0;
 }
 yyerror (s) /* Called by yyparse on error */
-	char *s;
 {
 	printf ("Problema com a analise sintatica!\n");
 }

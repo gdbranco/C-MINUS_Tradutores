@@ -1,2 +1,8 @@
-abre int a fecha
-abre a <- b fecha
+variaveis
+abre
+	int a ;
+	int b
+fecha
+abre
+	a <- 2
+fecha

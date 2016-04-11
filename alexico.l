@@ -16,6 +16,7 @@ etc 			.*
 */
 %%
 
+("variaveis")				{return var;}
 ("abre")	                        {return del_bloco_abre;}
 ("fecha")                               {return del_bloco_fecha;}
 ("int"|"float"|"char")                  {return tipo;}
@@ -24,8 +25,8 @@ etc 			.*
 ("<-") 		                        {return op_atrib;}
 ("+"|"/"|"*") 		                {return op_arit;}
 ("<"|">")                               {return op_relacional;}
-[ \t\r]+		                {;}
-.|\n		                        {return yytext[0];}
+[ \n\t\r]+		                {;}
+.		                        {return yytext[0];}
 
 %%
 func(char* string)
