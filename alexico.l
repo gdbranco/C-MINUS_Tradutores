@@ -2,24 +2,12 @@
 %{
 #include "asintatico.tab.h"
 %}
-
-/*id 				[a-z]{1,8}
-digito 			[0-9]
-flutuante 		{digito}+("."){digito}*|{digito}*("."){digito}+
-op_atrib 		("<-")
-op_arit 		("+"|"/"|"*")
-op_relacional 	("<"|">")
-del_bloco_abre  ("abre")
-del_bloco_fecha ("fecha")
-branco 			[ \n\t\r]+
-etc 			.*
-*/
 %%
 
 ("variaveis")				{return var;}
 ("abre")	                        {return del_bloco_abre;}
 ("fecha")                               {return del_bloco_fecha;}
-("int"|"float"|"char")                  {return tipo;}
+("int"|"float"|"char"|"void")                  {return tipo;}
 [a-z]{1,8} 			        {return id;}
 [0-9]+(".")*[0-9]*|[0-9]*(".")[0-9]+ 	{return flutuante;}
 ("<-") 		                        {return op_atrib;}
@@ -29,9 +17,3 @@ etc 			.*
 .		                        {return yytext[0];}
 
 %%
-func(char* string)
-{
-	printf("%s",string);
-	yy_scan_string(string);
-	yyparse();
-}

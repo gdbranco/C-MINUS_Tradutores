@@ -1,8 +1,14 @@
 variaveis
 abre
-	int a ;
+	int a
 	int b
 fecha
+void teste
+abre
+	a <- a / b;
+	a <- b / c
+fecha
+void main
 abre
 	a <- 2
 fecha

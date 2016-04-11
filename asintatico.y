@@ -18,16 +18,19 @@
 
 %%
 /* Regras definindo a GLC e acoes correspondentes */
-programa: del_bloco_abre lista_cmds del_bloco_fecha {;}
-| variaveis del_bloco_abre lista_cmds del_bloco_fecha {;};
+programa: lista_func {;}
+| var del_bloco_abre lista_var del_bloco_fecha lista_func {;};
 
-variaveis: var del_bloco_abre lista_decl_var del_bloco_fecha {;};
+lista_var: declaracao_var {;}
+| declaracao_var lista_var {;};
 
-lista_decl_var: declaracao_var {;}
-| declaracao_var ';' lista_decl_var {;};
+lista_func: declaracao_fun {;}
+| declaracao_fun lista_func {;};
 
 declaracao_var: tipo id {;}
 | tipo id exp_atrib {;};
+
+declaracao_fun: tipo id del_bloco_abre lista_cmds del_bloco_fecha{;}
 
 lista_cmds:	cmd	{;}
 | cmd ';' lista_cmds {;};
@@ -43,22 +46,6 @@ exp: flutuante {;}
 
 relacao: exp op_relacional exp {;}
 %%
-
-void file_string(char* arquivo)
-{
-	FILE* fp;
-	fp = fopen(arquivo,"r");
-	if(fp)
-	{
-		const size_t line_size = 300;
-		char* line = malloc(line_size);
-		while (fgets(line, line_size, fp) != NULL)
-		{
-	    		func(line);
-		}
-		free(line);    // dont forget to free heap memory
-	}
-}
 extern FILE *yyin;
 int main (int argc, char *argv[]) 
 {
