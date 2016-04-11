@@ -8,7 +8,9 @@
 %token op_atrib
 %token op_arit
 %token op_relacional
-%token del_bloco
+%token del_bloco_abre
+%token del_bloco_fecha
+%token tipo
 
 %%
 /* Regras definindo a GLC e acoes correspondentes */
@@ -19,16 +21,24 @@ input: /* empty */
 line:'\n'
 | programa '\n'  { printf ("Programa sintaticamente correto!\n"); };
 
-programa: del_bloco lista_cmds del_bloco {;};
+programa: del_bloco_abre lista_cmds del_bloco_fecha {;};
 
 lista_cmds:	cmd	{;}
 | cmd ';' lista_cmds {;};
 
-cmd: id op_atrib exp {;};
+cmd: id exp_atrib {;}
+| declaracao {;};
+
+exp_atrib: op_atrib exp {;}
 
 exp: flutuante {;}
 | id {;}
-| exp exp op_atrib {;};
+| exp op_arit exp {;};
+
+//relacao: exp op_relacional exp {;}
+
+declaracao: tipo id {;}
+| tipo id exp_atrib {;};
 %%
 
 main () 

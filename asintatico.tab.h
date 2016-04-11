@@ -50,7 +50,9 @@ extern int yydebug;
     op_atrib = 260,
     op_arit = 261,
     op_relacional = 262,
-    del_bloco = 263
+    del_bloco_abre = 263,
+    del_bloco_fecha = 264,
+    tipo = 265
   };
 #endif
 
