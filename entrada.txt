@@ -1,0 +1,2 @@
+abre int a fecha
+abre a <- b fecha

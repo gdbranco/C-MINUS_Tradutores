@@ -1523,9 +1523,31 @@ yyreturn:
 #line 45 "asintatico.y" /* yacc.c:1906  */
 
 
-main () 
+void file_string(char* arquivo)
 {
-	yyparse ();
+	FILE* fp;
+	fp = fopen(arquivo,"r");
+	if(fp)
+	{
+		const size_t line_size = 300;
+		char* line = malloc(line_size);
+		while (fgets(line, line_size, fp) != NULL)
+		{
+	    		func(line);
+		}
+		free(line);    // dont forget to free heap memory
+	}
+}
+
+int main (int argc, char *argv[]) 
+{
+	if(argc < 2)
+	{
+		perror("Too few argc\n");
+		return -1;
+	}
+	file_string(argv[1]);
+	return 0;
 }
 yyerror (s) /* Called by yyparse on error */
 	char *s;

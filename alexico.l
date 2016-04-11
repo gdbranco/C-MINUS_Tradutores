@@ -28,3 +28,9 @@ etc 			.*
 .|\n		                        {return yytext[0];}
 
 %%
+func(char* string)
+{
+	printf("%s",string);
+	yy_scan_string(string);
+	yyparse();
+}

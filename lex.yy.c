@@ -1832,4 +1832,10 @@ void yyfree (void * ptr )
 #line 30 "alexico.l"
 
 
+func(char* string)
+{
+	printf("%s",string);
+	yy_scan_string(string);
+	yyparse();
+}
 
