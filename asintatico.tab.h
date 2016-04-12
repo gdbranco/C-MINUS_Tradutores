@@ -48,13 +48,18 @@ extern int yydebug;
     id = 258,
     flutuante = 259,
     op_atrib = 260,
-    op_arit = 261,
-    op_relacional = 262,
-    del_bloco_abre = 263,
-    del_bloco_fecha = 264,
-    tipo = 265,
-    var = 266,
-    branco = 267
+    op_add = 261,
+    op_mult = 262,
+    op_relacional = 263,
+    op_rpt = 264,
+    op_if = 265,
+    IFX = 266,
+    op_else = 267,
+    del_bloco_abre = 268,
+    del_bloco_fecha = 269,
+    sub = 270,
+    tipo = 271,
+    branco = 272
   };
 #endif
 

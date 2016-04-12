@@ -6,45 +6,73 @@
 %token id
 %token flutuante
 %token op_atrib
-%token op_arit
-%left op_arit
+%token op_add
+%token op_mult
 %token op_relacional
-%left op_relacional
+%token op_rpt
+%token op_if
+%nonassoc IFX
+%nonassoc op_else
 %token del_bloco_abre
 %token del_bloco_fecha
+%token sub
 %token tipo
-%token var
 %token branco
 
 %%
 /* Regras definindo a GLC e acoes correspondentes */
-programa: lista_func {;}
-| var del_bloco_abre lista_var del_bloco_fecha lista_func {;};
+programa: lista_declaracao {;};
 
-lista_var: declaracao_var {;}
-| declaracao_var lista_var {;};
+lista_declaracao: declaracao {;}
+| lista_declaracao declaracao {;};
 
-lista_func: declaracao_fun {;}
-| declaracao_fun lista_func {;};
+declaracao: declaracao_var {;}
+| declaracao_fun {;};
 
-declaracao_var: tipo id {;}
-| tipo id exp_atrib {;};
+declaracao_var: tipo lista_declaracao_var {;};
 
-declaracao_fun: tipo id del_bloco_abre lista_cmds del_bloco_fecha{;}
+lista_declaracao_var: id ';' {;}
+| id ',' lista_declaracao_var {;};
 
-lista_cmds:	cmd	{;}
-| cmd ';' lista_cmds {;};
+declaracao_fun: tipo id '('')' cmpst_statement {;} ;
 
-cmd: id exp_atrib {;} ;
+cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha;
 
-exp_atrib: op_atrib exp {;}
+lista_statement: statement {;}
+| statement lista_statement {;};
 
-exp: flutuante {;}
-| id {;}
-| exp op_arit exp {;}
-| relacao {;}; 
+statement: exp_statement {;} 
+| sel_statement {;}
+| rpt_statement {;}
+| cmpst_statement {;};
 
-relacao: exp op_relacional exp {;}
+sel_statement: op_if '(' exp ')' statement %prec IFX{;} 
+| op_if '(' exp ')' statement op_else statement {;};
+
+rpt_statement: op_rpt '(' exp ')' statement {;};
+
+exp_statement:  exp ';' {;} ;
+
+exp: var op_atrib exp {;}
+| exp_simples {;};
+
+var: id {;};
+
+exp_simples: exp_add op_relacional exp_add {;}
+| exp_add {;};
+
+exp_add: exp_add op_add term {;}
+| term {;};
+
+term: term op_mult fator {;}
+| fator {;};
+
+fator: '(' exp ')' {;}
+| call {;}
+| var {;}
+| flutuante {;};
+
+call: id '('')' {;};
 %%
 extern FILE *yyin;
 int main (int argc, char *argv[]) 

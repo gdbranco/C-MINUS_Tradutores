@@ -1,7 +1,7 @@
 all: main clean
 
 main:
-	bison -d asintatico.y
+	bison -d -v asintatico.y
 	flex alexico.l
 	gcc asintatico.tab.c lex.yy.c
 

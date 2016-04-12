@@ -1,14 +1,25 @@
-variaveis
-abre
-	int a
-	int b
-fecha
-void teste
-abre
-	a <- a / b;
-	a <- b / c
-fecha
-void main
-abre
-	a <- 2
-fecha
+int a,b,c;
+void teste()
+{
+	while (a < b)
+	{
+		a <- a + 1;
+	}
+	if ( a > c )
+	{
+		if(b > c)
+		{
+			a<-1;
+		}
+	}
+	else
+	{
+		a <- 2;
+	}
+}
+void main()
+{
+	a <- (b / 2) + 3;
+	b <- (1/2) * 3 /(2/5);
+	teste();
+}
