@@ -57,15 +57,24 @@ extern int yydebug;
     op_else = 267,
     del_bloco_abre = 268,
     del_bloco_fecha = 269,
-    sub = 270,
-    tipo = 271,
-    branco = 272
+    tipo = 270
   };
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+typedef union YYSTYPE YYSTYPE;
+union YYSTYPE
+{
+#line 51 "asintatico.y" /* yacc.c:1909  */
+
+char *cadeia;
+char *tipo;
+float fnum;
+int inum;
+
+#line 77 "asintatico.tab.h" /* yacc.c:1909  */
+};
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif

@@ -1,7 +1,7 @@
 int a,b,c;
 void teste()
 {
-	while (a < b)
+	while (a < d)
 	{
 		a <- a + 1;
 	}
@@ -22,4 +22,5 @@ void main()
 	a <- (b / 2) + 3;
 	b <- (1/2) * 3 /(2/5);
 	teste();
+	a();
 }
