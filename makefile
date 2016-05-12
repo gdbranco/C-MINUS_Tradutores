@@ -7,6 +7,7 @@ main:
 
 clean:
 	rm -rf *.o
+	rm -rf *.gch
 	
-fclean:
+fclean: clean
 	rm -rf *.out

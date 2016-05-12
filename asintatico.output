@@ -15,68 +15,70 @@ Grammar
     7 lista_declaracao_var: id ';'
     8                     | id ',' lista_declaracao_var
 
-    9 declaracao_fun: tipo id '(' ')' cmpst_statement
+    9 $@1: %empty
 
-   10 cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha
+   10 declaracao_fun: tipo id '(' ')' $@1 cmpst_statement
 
-   11 lista_statement: statement
-   12                | statement lista_statement
+   11 cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha
 
-   13 statement: exp_statement
-   14          | sel_statement
-   15          | rpt_statement
-   16          | cmpst_statement
+   12 lista_statement: statement
+   13                | statement lista_statement
 
-   17 sel_statement: op_if '(' exp ')' statement
-   18              | op_if '(' exp ')' statement op_else statement
+   14 statement: exp_statement
+   15          | sel_statement
+   16          | rpt_statement
+   17          | cmpst_statement
 
-   19 rpt_statement: op_rpt '(' exp ')' statement
+   18 sel_statement: op_if '(' exp ')' statement
+   19              | op_if '(' exp ')' statement op_else statement
 
-   20 exp_statement: exp ';'
+   20 rpt_statement: op_rpt '(' exp ')' statement
 
-   21 exp: var op_atrib exp
-   22    | exp_simples
+   21 exp_statement: exp ';'
 
-   23 var: id
+   22 exp: var op_atrib exp
+   23    | exp_simples
 
-   24 exp_simples: exp_add op_relacional exp_add
-   25            | exp_add
+   24 var: id
 
-   26 exp_add: exp_add op_add term
-   27        | term
+   25 exp_simples: exp_add op_relacional exp_add
+   26            | exp_add
 
-   28 term: term op_mult fator
-   29     | fator
+   27 exp_add: exp_add op_add term
+   28        | term
 
-   30 fator: '(' exp ')'
-   31      | call
-   32      | var
-   33      | flutuante
+   29 term: term op_mult fator
+   30     | fator
 
-   34 call: id '(' ')'
+   31 fator: '(' exp ')'
+   32      | call
+   33      | var
+   34      | flutuante
+
+   35 call: id '(' ')'
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
-'(' (40) 9 17 18 19 30 34
-')' (41) 9 17 18 19 30 34
+'(' (40) 10 18 19 20 31 35
+')' (41) 10 18 19 20 31 35
 ',' (44) 8
-';' (59) 7 20
+';' (59) 7 21
 error (256)
-id (258) 7 8 9 23 34
-flutuante (259) 33
-op_atrib (260) 21
-op_add (261) 26
-op_mult (262) 28
-op_relacional (263) 24
-op_rpt (264) 19
-op_if (265) 17 18
+id (258) 7 8 10 24 35
+flutuante (259) 34
+op_atrib (260) 22
+op_add (261) 27
+op_mult (262) 29
+op_relacional (263) 25
+op_rpt (264) 20
+op_if (265) 18 19
 IFX (266)
-op_else (267) 18
-del_bloco_abre (268) 10
-del_bloco_fecha (269) 10
-tipo (270) 6 9
+op_else (267) 19
+del_bloco_abre (268) 11
+del_bloco_fecha (269) 11
+tipo (270) 6 10
 
 
 Nonterminals, with rules where they appear
@@ -94,33 +96,35 @@ declaracao_var (24)
 lista_declaracao_var (25)
     on left: 7 8, on right: 6 8
 declaracao_fun (26)
-    on left: 9, on right: 5
-cmpst_statement (27)
-    on left: 10, on right: 9 16
-lista_statement (28)
-    on left: 11 12, on right: 10 12
-statement (29)
-    on left: 13 14 15 16, on right: 11 12 17 18 19
-sel_statement (30)
-    on left: 17 18, on right: 14
-rpt_statement (31)
-    on left: 19, on right: 15
-exp_statement (32)
-    on left: 20, on right: 13
-exp (33)
-    on left: 21 22, on right: 17 18 19 20 21 30
-var (34)
-    on left: 23, on right: 21 32
-exp_simples (35)
-    on left: 24 25, on right: 22
-exp_add (36)
-    on left: 26 27, on right: 24 25 26
-term (37)
-    on left: 28 29, on right: 26 27 28
-fator (38)
-    on left: 30 31 32 33, on right: 28 29
-call (39)
-    on left: 34, on right: 31
+    on left: 10, on right: 5
+$@1 (27)
+    on left: 9, on right: 10
+cmpst_statement (28)
+    on left: 11, on right: 10 17
+lista_statement (29)
+    on left: 12 13, on right: 11 13
+statement (30)
+    on left: 14 15 16 17, on right: 12 13 18 19 20
+sel_statement (31)
+    on left: 18 19, on right: 15
+rpt_statement (32)
+    on left: 20, on right: 16
+exp_statement (33)
+    on left: 21, on right: 14
+exp (34)
+    on left: 22 23, on right: 18 19 20 21 22 31
+var (35)
+    on left: 24, on right: 22 33
+exp_simples (36)
+    on left: 25 26, on right: 23
+exp_add (37)
+    on left: 27 28, on right: 25 26 27
+term (38)
+    on left: 29 30, on right: 27 28 29
+fator (39)
+    on left: 31 32 33 34, on right: 29 30
+call (40)
+    on left: 35, on right: 32
 
 
 State 0
@@ -139,7 +143,7 @@ State 0
 State 1
 
     6 declaracao_var: tipo . lista_declaracao_var
-    9 declaracao_fun: tipo . id '(' ')' cmpst_statement
+   10 declaracao_fun: tipo . id '(' ')' $@1 cmpst_statement
 
     id  shift, and go to state 7
 
@@ -192,7 +196,7 @@ State 7
 
     7 lista_declaracao_var: id . ';'
     8                     | id . ',' lista_declaracao_var
-    9 declaracao_fun: tipo id . '(' ')' cmpst_statement
+   10 declaracao_fun: tipo id . '(' ')' $@1 cmpst_statement
 
     ';'  shift, and go to state 11
     ','  shift, and go to state 12
@@ -238,7 +242,7 @@ State 12
 
 State 13
 
-    9 declaracao_fun: tipo id '(' . ')' cmpst_statement
+   10 declaracao_fun: tipo id '(' . ')' $@1 cmpst_statement
 
     ')'  shift, and go to state 16
 
@@ -261,513 +265,522 @@ State 15
 
 State 16
 
-    9 declaracao_fun: tipo id '(' ')' . cmpst_statement
+   10 declaracao_fun: tipo id '(' ')' . $@1 cmpst_statement
 
-    del_bloco_abre  shift, and go to state 17
+    $default  reduce using rule 9 ($@1)
 
-    cmpst_statement  go to state 18
+    $@1  go to state 17
 
 
 State 17
 
-   10 cmpst_statement: del_bloco_abre . lista_statement del_bloco_fecha
+   10 declaracao_fun: tipo id '(' ')' $@1 . cmpst_statement
 
-    id              shift, and go to state 19
-    flutuante       shift, and go to state 20
-    op_rpt          shift, and go to state 21
-    op_if           shift, and go to state 22
-    del_bloco_abre  shift, and go to state 17
-    '('             shift, and go to state 23
+    del_bloco_abre  shift, and go to state 18
 
-    cmpst_statement  go to state 24
-    lista_statement  go to state 25
-    statement        go to state 26
-    sel_statement    go to state 27
-    rpt_statement    go to state 28
-    exp_statement    go to state 29
-    exp              go to state 30
-    var              go to state 31
-    exp_simples      go to state 32
-    exp_add          go to state 33
-    term             go to state 34
-    fator            go to state 35
-    call             go to state 36
+    cmpst_statement  go to state 19
 
 
 State 18
 
-    9 declaracao_fun: tipo id '(' ')' cmpst_statement .
+   11 cmpst_statement: del_bloco_abre . lista_statement del_bloco_fecha
 
-    $default  reduce using rule 9 (declaracao_fun)
+    id              shift, and go to state 20
+    flutuante       shift, and go to state 21
+    op_rpt          shift, and go to state 22
+    op_if           shift, and go to state 23
+    del_bloco_abre  shift, and go to state 18
+    '('             shift, and go to state 24
+
+    cmpst_statement  go to state 25
+    lista_statement  go to state 26
+    statement        go to state 27
+    sel_statement    go to state 28
+    rpt_statement    go to state 29
+    exp_statement    go to state 30
+    exp              go to state 31
+    var              go to state 32
+    exp_simples      go to state 33
+    exp_add          go to state 34
+    term             go to state 35
+    fator            go to state 36
+    call             go to state 37
 
 
 State 19
 
-   23 var: id .
-   34 call: id . '(' ')'
+   10 declaracao_fun: tipo id '(' ')' $@1 cmpst_statement .
 
-    '('  shift, and go to state 37
-
-    $default  reduce using rule 23 (var)
+    $default  reduce using rule 10 (declaracao_fun)
 
 
 State 20
 
-   33 fator: flutuante .
+   24 var: id .
+   35 call: id . '(' ')'
 
-    $default  reduce using rule 33 (fator)
+    '('  shift, and go to state 38
+
+    $default  reduce using rule 24 (var)
 
 
 State 21
 
-   19 rpt_statement: op_rpt . '(' exp ')' statement
+   34 fator: flutuante .
 
-    '('  shift, and go to state 38
+    $default  reduce using rule 34 (fator)
 
 
 State 22
 
-   17 sel_statement: op_if . '(' exp ')' statement
-   18              | op_if . '(' exp ')' statement op_else statement
+   20 rpt_statement: op_rpt . '(' exp ')' statement
 
     '('  shift, and go to state 39
 
 
 State 23
 
-   30 fator: '(' . exp ')'
+   18 sel_statement: op_if . '(' exp ')' statement
+   19              | op_if . '(' exp ')' statement op_else statement
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
-
-    exp          go to state 40
-    var          go to state 31
-    exp_simples  go to state 32
-    exp_add      go to state 33
-    term         go to state 34
-    fator        go to state 35
-    call         go to state 36
+    '('  shift, and go to state 40
 
 
 State 24
 
-   16 statement: cmpst_statement .
+   31 fator: '(' . exp ')'
 
-    $default  reduce using rule 16 (statement)
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
+
+    exp          go to state 41
+    var          go to state 32
+    exp_simples  go to state 33
+    exp_add      go to state 34
+    term         go to state 35
+    fator        go to state 36
+    call         go to state 37
 
 
 State 25
 
-   10 cmpst_statement: del_bloco_abre lista_statement . del_bloco_fecha
+   17 statement: cmpst_statement .
 
-    del_bloco_fecha  shift, and go to state 41
+    $default  reduce using rule 17 (statement)
 
 
 State 26
 
-   11 lista_statement: statement .
-   12                | statement . lista_statement
+   11 cmpst_statement: del_bloco_abre lista_statement . del_bloco_fecha
 
-    id              shift, and go to state 19
-    flutuante       shift, and go to state 20
-    op_rpt          shift, and go to state 21
-    op_if           shift, and go to state 22
-    del_bloco_abre  shift, and go to state 17
-    '('             shift, and go to state 23
-
-    $default  reduce using rule 11 (lista_statement)
-
-    cmpst_statement  go to state 24
-    lista_statement  go to state 42
-    statement        go to state 26
-    sel_statement    go to state 27
-    rpt_statement    go to state 28
-    exp_statement    go to state 29
-    exp              go to state 30
-    var              go to state 31
-    exp_simples      go to state 32
-    exp_add          go to state 33
-    term             go to state 34
-    fator            go to state 35
-    call             go to state 36
+    del_bloco_fecha  shift, and go to state 42
 
 
 State 27
 
-   14 statement: sel_statement .
+   12 lista_statement: statement .
+   13                | statement . lista_statement
 
-    $default  reduce using rule 14 (statement)
+    id              shift, and go to state 20
+    flutuante       shift, and go to state 21
+    op_rpt          shift, and go to state 22
+    op_if           shift, and go to state 23
+    del_bloco_abre  shift, and go to state 18
+    '('             shift, and go to state 24
+
+    $default  reduce using rule 12 (lista_statement)
+
+    cmpst_statement  go to state 25
+    lista_statement  go to state 43
+    statement        go to state 27
+    sel_statement    go to state 28
+    rpt_statement    go to state 29
+    exp_statement    go to state 30
+    exp              go to state 31
+    var              go to state 32
+    exp_simples      go to state 33
+    exp_add          go to state 34
+    term             go to state 35
+    fator            go to state 36
+    call             go to state 37
 
 
 State 28
 
-   15 statement: rpt_statement .
+   15 statement: sel_statement .
 
     $default  reduce using rule 15 (statement)
 
 
 State 29
 
-   13 statement: exp_statement .
+   16 statement: rpt_statement .
 
-    $default  reduce using rule 13 (statement)
+    $default  reduce using rule 16 (statement)
 
 
 State 30
 
-   20 exp_statement: exp . ';'
+   14 statement: exp_statement .
 
-    ';'  shift, and go to state 43
+    $default  reduce using rule 14 (statement)
 
 
 State 31
 
-   21 exp: var . op_atrib exp
-   32 fator: var .
+   21 exp_statement: exp . ';'
 
-    op_atrib  shift, and go to state 44
-
-    $default  reduce using rule 32 (fator)
+    ';'  shift, and go to state 44
 
 
 State 32
 
-   22 exp: exp_simples .
+   22 exp: var . op_atrib exp
+   33 fator: var .
 
-    $default  reduce using rule 22 (exp)
+    op_atrib  shift, and go to state 45
+
+    $default  reduce using rule 33 (fator)
 
 
 State 33
 
-   24 exp_simples: exp_add . op_relacional exp_add
-   25            | exp_add .
-   26 exp_add: exp_add . op_add term
+   23 exp: exp_simples .
 
-    op_add         shift, and go to state 45
-    op_relacional  shift, and go to state 46
-
-    $default  reduce using rule 25 (exp_simples)
+    $default  reduce using rule 23 (exp)
 
 
 State 34
 
-   27 exp_add: term .
-   28 term: term . op_mult fator
+   25 exp_simples: exp_add . op_relacional exp_add
+   26            | exp_add .
+   27 exp_add: exp_add . op_add term
 
-    op_mult  shift, and go to state 47
+    op_add         shift, and go to state 46
+    op_relacional  shift, and go to state 47
 
-    $default  reduce using rule 27 (exp_add)
+    $default  reduce using rule 26 (exp_simples)
 
 
 State 35
 
-   29 term: fator .
+   28 exp_add: term .
+   29 term: term . op_mult fator
 
-    $default  reduce using rule 29 (term)
+    op_mult  shift, and go to state 48
+
+    $default  reduce using rule 28 (exp_add)
 
 
 State 36
 
-   31 fator: call .
+   30 term: fator .
 
-    $default  reduce using rule 31 (fator)
+    $default  reduce using rule 30 (term)
 
 
 State 37
 
-   34 call: id '(' . ')'
+   32 fator: call .
 
-    ')'  shift, and go to state 48
+    $default  reduce using rule 32 (fator)
 
 
 State 38
 
-   19 rpt_statement: op_rpt '(' . exp ')' statement
+   35 call: id '(' . ')'
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
-
-    exp          go to state 49
-    var          go to state 31
-    exp_simples  go to state 32
-    exp_add      go to state 33
-    term         go to state 34
-    fator        go to state 35
-    call         go to state 36
+    ')'  shift, and go to state 49
 
 
 State 39
 
-   17 sel_statement: op_if '(' . exp ')' statement
-   18              | op_if '(' . exp ')' statement op_else statement
+   20 rpt_statement: op_rpt '(' . exp ')' statement
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
 
     exp          go to state 50
-    var          go to state 31
-    exp_simples  go to state 32
-    exp_add      go to state 33
-    term         go to state 34
-    fator        go to state 35
-    call         go to state 36
+    var          go to state 32
+    exp_simples  go to state 33
+    exp_add      go to state 34
+    term         go to state 35
+    fator        go to state 36
+    call         go to state 37
 
 
 State 40
 
-   30 fator: '(' exp . ')'
+   18 sel_statement: op_if '(' . exp ')' statement
+   19              | op_if '(' . exp ')' statement op_else statement
 
-    ')'  shift, and go to state 51
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
+
+    exp          go to state 51
+    var          go to state 32
+    exp_simples  go to state 33
+    exp_add      go to state 34
+    term         go to state 35
+    fator        go to state 36
+    call         go to state 37
 
 
 State 41
 
-   10 cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha .
+   31 fator: '(' exp . ')'
 
-    $default  reduce using rule 10 (cmpst_statement)
+    ')'  shift, and go to state 52
 
 
 State 42
 
-   12 lista_statement: statement lista_statement .
+   11 cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha .
 
-    $default  reduce using rule 12 (lista_statement)
+    $default  reduce using rule 11 (cmpst_statement)
 
 
 State 43
 
-   20 exp_statement: exp ';' .
+   13 lista_statement: statement lista_statement .
 
-    $default  reduce using rule 20 (exp_statement)
+    $default  reduce using rule 13 (lista_statement)
 
 
 State 44
 
-   21 exp: var op_atrib . exp
+   21 exp_statement: exp ';' .
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
-
-    exp          go to state 52
-    var          go to state 31
-    exp_simples  go to state 32
-    exp_add      go to state 33
-    term         go to state 34
-    fator        go to state 35
-    call         go to state 36
+    $default  reduce using rule 21 (exp_statement)
 
 
 State 45
 
-   26 exp_add: exp_add op_add . term
+   22 exp: var op_atrib . exp
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
 
-    var    go to state 53
-    term   go to state 54
-    fator  go to state 35
-    call   go to state 36
+    exp          go to state 53
+    var          go to state 32
+    exp_simples  go to state 33
+    exp_add      go to state 34
+    term         go to state 35
+    fator        go to state 36
+    call         go to state 37
 
 
 State 46
 
-   24 exp_simples: exp_add op_relacional . exp_add
+   27 exp_add: exp_add op_add . term
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
 
-    var      go to state 53
-    exp_add  go to state 55
-    term     go to state 34
-    fator    go to state 35
-    call     go to state 36
+    var    go to state 54
+    term   go to state 55
+    fator  go to state 36
+    call   go to state 37
 
 
 State 47
 
-   28 term: term op_mult . fator
+   25 exp_simples: exp_add op_relacional . exp_add
 
-    id         shift, and go to state 19
-    flutuante  shift, and go to state 20
-    '('        shift, and go to state 23
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
 
-    var    go to state 53
-    fator  go to state 56
-    call   go to state 36
+    var      go to state 54
+    exp_add  go to state 56
+    term     go to state 35
+    fator    go to state 36
+    call     go to state 37
 
 
 State 48
 
-   34 call: id '(' ')' .
+   29 term: term op_mult . fator
 
-    $default  reduce using rule 34 (call)
+    id         shift, and go to state 20
+    flutuante  shift, and go to state 21
+    '('        shift, and go to state 24
+
+    var    go to state 54
+    fator  go to state 57
+    call   go to state 37
 
 
 State 49
 
-   19 rpt_statement: op_rpt '(' exp . ')' statement
+   35 call: id '(' ')' .
 
-    ')'  shift, and go to state 57
+    $default  reduce using rule 35 (call)
 
 
 State 50
 
-   17 sel_statement: op_if '(' exp . ')' statement
-   18              | op_if '(' exp . ')' statement op_else statement
+   20 rpt_statement: op_rpt '(' exp . ')' statement
 
     ')'  shift, and go to state 58
 
 
 State 51
 
-   30 fator: '(' exp ')' .
+   18 sel_statement: op_if '(' exp . ')' statement
+   19              | op_if '(' exp . ')' statement op_else statement
 
-    $default  reduce using rule 30 (fator)
+    ')'  shift, and go to state 59
 
 
 State 52
 
-   21 exp: var op_atrib exp .
+   31 fator: '(' exp ')' .
 
-    $default  reduce using rule 21 (exp)
+    $default  reduce using rule 31 (fator)
 
 
 State 53
 
-   32 fator: var .
+   22 exp: var op_atrib exp .
 
-    $default  reduce using rule 32 (fator)
+    $default  reduce using rule 22 (exp)
 
 
 State 54
 
-   26 exp_add: exp_add op_add term .
-   28 term: term . op_mult fator
+   33 fator: var .
 
-    op_mult  shift, and go to state 47
-
-    $default  reduce using rule 26 (exp_add)
+    $default  reduce using rule 33 (fator)
 
 
 State 55
 
-   24 exp_simples: exp_add op_relacional exp_add .
-   26 exp_add: exp_add . op_add term
+   27 exp_add: exp_add op_add term .
+   29 term: term . op_mult fator
 
-    op_add  shift, and go to state 45
+    op_mult  shift, and go to state 48
 
-    $default  reduce using rule 24 (exp_simples)
+    $default  reduce using rule 27 (exp_add)
 
 
 State 56
 
-   28 term: term op_mult fator .
+   25 exp_simples: exp_add op_relacional exp_add .
+   27 exp_add: exp_add . op_add term
 
-    $default  reduce using rule 28 (term)
+    op_add  shift, and go to state 46
+
+    $default  reduce using rule 25 (exp_simples)
 
 
 State 57
 
-   19 rpt_statement: op_rpt '(' exp ')' . statement
+   29 term: term op_mult fator .
 
-    id              shift, and go to state 19
-    flutuante       shift, and go to state 20
-    op_rpt          shift, and go to state 21
-    op_if           shift, and go to state 22
-    del_bloco_abre  shift, and go to state 17
-    '('             shift, and go to state 23
-
-    cmpst_statement  go to state 24
-    statement        go to state 59
-    sel_statement    go to state 27
-    rpt_statement    go to state 28
-    exp_statement    go to state 29
-    exp              go to state 30
-    var              go to state 31
-    exp_simples      go to state 32
-    exp_add          go to state 33
-    term             go to state 34
-    fator            go to state 35
-    call             go to state 36
+    $default  reduce using rule 29 (term)
 
 
 State 58
 
-   17 sel_statement: op_if '(' exp ')' . statement
-   18              | op_if '(' exp ')' . statement op_else statement
+   20 rpt_statement: op_rpt '(' exp ')' . statement
 
-    id              shift, and go to state 19
-    flutuante       shift, and go to state 20
-    op_rpt          shift, and go to state 21
-    op_if           shift, and go to state 22
-    del_bloco_abre  shift, and go to state 17
-    '('             shift, and go to state 23
+    id              shift, and go to state 20
+    flutuante       shift, and go to state 21
+    op_rpt          shift, and go to state 22
+    op_if           shift, and go to state 23
+    del_bloco_abre  shift, and go to state 18
+    '('             shift, and go to state 24
 
-    cmpst_statement  go to state 24
+    cmpst_statement  go to state 25
     statement        go to state 60
-    sel_statement    go to state 27
-    rpt_statement    go to state 28
-    exp_statement    go to state 29
-    exp              go to state 30
-    var              go to state 31
-    exp_simples      go to state 32
-    exp_add          go to state 33
-    term             go to state 34
-    fator            go to state 35
-    call             go to state 36
+    sel_statement    go to state 28
+    rpt_statement    go to state 29
+    exp_statement    go to state 30
+    exp              go to state 31
+    var              go to state 32
+    exp_simples      go to state 33
+    exp_add          go to state 34
+    term             go to state 35
+    fator            go to state 36
+    call             go to state 37
 
 
 State 59
 
-   19 rpt_statement: op_rpt '(' exp ')' statement .
+   18 sel_statement: op_if '(' exp ')' . statement
+   19              | op_if '(' exp ')' . statement op_else statement
 
-    $default  reduce using rule 19 (rpt_statement)
+    id              shift, and go to state 20
+    flutuante       shift, and go to state 21
+    op_rpt          shift, and go to state 22
+    op_if           shift, and go to state 23
+    del_bloco_abre  shift, and go to state 18
+    '('             shift, and go to state 24
+
+    cmpst_statement  go to state 25
+    statement        go to state 61
+    sel_statement    go to state 28
+    rpt_statement    go to state 29
+    exp_statement    go to state 30
+    exp              go to state 31
+    var              go to state 32
+    exp_simples      go to state 33
+    exp_add          go to state 34
+    term             go to state 35
+    fator            go to state 36
+    call             go to state 37
 
 
 State 60
 
-   17 sel_statement: op_if '(' exp ')' statement .
-   18              | op_if '(' exp ')' statement . op_else statement
+   20 rpt_statement: op_rpt '(' exp ')' statement .
 
-    op_else  shift, and go to state 61
-
-    $default  reduce using rule 17 (sel_statement)
+    $default  reduce using rule 20 (rpt_statement)
 
 
 State 61
 
-   18 sel_statement: op_if '(' exp ')' statement op_else . statement
+   18 sel_statement: op_if '(' exp ')' statement .
+   19              | op_if '(' exp ')' statement . op_else statement
 
-    id              shift, and go to state 19
-    flutuante       shift, and go to state 20
-    op_rpt          shift, and go to state 21
-    op_if           shift, and go to state 22
-    del_bloco_abre  shift, and go to state 17
-    '('             shift, and go to state 23
+    op_else  shift, and go to state 62
 
-    cmpst_statement  go to state 24
-    statement        go to state 62
-    sel_statement    go to state 27
-    rpt_statement    go to state 28
-    exp_statement    go to state 29
-    exp              go to state 30
-    var              go to state 31
-    exp_simples      go to state 32
-    exp_add          go to state 33
-    term             go to state 34
-    fator            go to state 35
-    call             go to state 36
+    $default  reduce using rule 18 (sel_statement)
 
 
 State 62
 
-   18 sel_statement: op_if '(' exp ')' statement op_else statement .
+   19 sel_statement: op_if '(' exp ')' statement op_else . statement
 
-    $default  reduce using rule 18 (sel_statement)
+    id              shift, and go to state 20
+    flutuante       shift, and go to state 21
+    op_rpt          shift, and go to state 22
+    op_if           shift, and go to state 23
+    del_bloco_abre  shift, and go to state 18
+    '('             shift, and go to state 24
+
+    cmpst_statement  go to state 25
+    statement        go to state 63
+    sel_statement    go to state 28
+    rpt_statement    go to state 29
+    exp_statement    go to state 30
+    exp              go to state 31
+    var              go to state 32
+    exp_simples      go to state 33
+    exp_add          go to state 34
+    term             go to state 35
+    fator            go to state 36
+    call             go to state 37
+
+
+State 63
+
+   19 sel_statement: op_if '(' exp ')' statement op_else statement .
+
+    $default  reduce using rule 19 (sel_statement)

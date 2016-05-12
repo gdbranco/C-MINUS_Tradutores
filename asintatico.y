@@ -4,27 +4,26 @@
 #include <stdio.h>
 #include <string.h>
 #include "vector.h"
-#define ERRO_VAR_UNDEF "Variavel nao declarada"
-
+#define ERRO_UNDEF "nao declarado"
+#define WRNG_NUSED "nao usado"
+#define SINTATICAMENTE_CORRETO "O programa esta sintaticamente correto"
+#define SEMANTICAMENTE_CORRETO "O programa esta semanticamento correto"
 extern yylineno;
 int cont_declr_var_linha = 0;
 int cont_declr_tot = 0;
+int erros = 0;
 typedef struct _simbolo{
 	char id[9];
 	char tipo[6];
 	int declarado;
+	int usado;
 	char kind[6];
 	int linha;
 }Simbolo;
 vector_p TS;
 void insereTS(Simbolo s);
-void setTS(Simbolo s,size_t index);
 int nameinTS(char *name, char *kind);
 int getIndexTS(Simbolo b);
-void setTS(Simbolo s, size_t index)
-{
-	vector_set(TS, index, (void*)&s,sizeof(Simbolo));
-}
 void insereTS(Simbolo s)
 {
 	vector_add(TS,(void*)&s,sizeof(Simbolo));
@@ -86,11 +85,11 @@ declaracao_var: tipo lista_declaracao_var
 	for(i=0;i<cont_declr_var_linha;i++)
 	{
 		Simbolo *s = (Simbolo*)vector_get(TS,cont_declr_tot - i - 1);
-		strcpy(s->tipo,$1);
+		strcpy(s->tipo,$tipo);
 		strcpy(s->kind,"var");
 		s->declarado = 1;
+		s->usado = 0;
 		s->linha = yylineno;
-		setTS(*s,cont_declr_tot - i - 1);
 	}
 	cont_declr_var_linha = 0;
 };
@@ -100,7 +99,7 @@ lista_declaracao_var:
 	{
 		cont_declr_var_linha++;
 		Simbolo s;
-		strcpy(s.id,$1);
+		strcpy(s.id,$id);
 		insereTS(s);
 	}
 	| id ',' lista_declaracao_var 
@@ -112,17 +111,17 @@ lista_declaracao_var:
 	};
 
 declaracao_fun:
-	tipo id '('')' cmpst_statement
-	{
+	tipo id '('')' {
 		Simbolo s;
 		strcpy(s.tipo,$1);
 		strcpy(s.id,$2);
 		strcpy(s.kind,"fun");
-		s.linha = -1;
+		s.linha = yylineno;
 		s.declarado = 1;
+		s.usado = 0;
 		cont_declr_tot++;
 		insereTS(s);
-	};
+	} cmpst_statement{;};
 
 cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha{;};
 
@@ -147,15 +146,23 @@ exp: var op_atrib exp {;}
 var: 
 	id
 	{
-		Simbolo s;
-		strcpy(s.id,$1);
-		if(nameinTS($1,"var")==-1)
+		int posicao = nameinTS($1,"var");
+		if(posicao==-1)
 		{
+			Simbolo s;
+			strcpy(s.id,$1);
 			strcpy(s.tipo,"undef");
 			strcpy(s.kind,"var");
 			s.linha = yylineno;
 			s.declarado = 0;
+			s.usado = 1;
 			insereTS(s);
+			cont_declr_tot++;
+		}
+		else
+		{
+			Simbolo *s = (Simbolo*) vector_get(TS,posicao);
+			s->usado = 1;
 		}
 	};
 
@@ -176,17 +183,24 @@ fator: '(' exp ')' {;}
 call: 
 	id '('')' 
 	{
-		Simbolo s;
-		if(nameinTS($1,"fun")==-1)
+		int posicao = nameinTS($id,"fun");
+		if(posicao==-1)
 		{
+			Simbolo s;
 			strcpy(s.kind,"fun");
 			strcpy(s.tipo,"undef");
 			strcpy(s.id,$1);
 			s.declarado = 0;
+			s.usado = 1;
 			s.linha = yylineno;
 			insereTS(s);
+			cont_declr_tot++;
 		}
-		printf("Utilizando id fun %s\n",$1);
+		else
+		{
+			Simbolo *s = vector_get(TS,posicao);
+			s->usado = 1;
+		}
 	};
 %%
 extern FILE *yyin;
@@ -204,15 +218,38 @@ int main (int argc, char *argv[])
 	{
 		erro = yyparse();
 		if(!erro)
-			printf("PROGRAMA TA MASSA\n");
+			printf("%s\n",SINTATICAMENTE_CORRETO);
+		else
+			erros++;
 	}
 	int i = 0;
-	printf("----REPORT----\nPrograma com %d linhas\nHouveram %d declaracoes\n",yylineno-1,cont_declr_tot);
-	printf("KIND\tTIPO\tID\tDECLARADO\tLINHA\n");
 	for(i=0;i<TS->length;i++)
 	{
 		Simbolo *s = (Simbolo*)vector_get(TS,i);
-		printf("%s\t%s\t%s\t%d\t\t%d\n",s->kind,s->tipo,s->id,s->declarado,s->linha);
+		if(!s->declarado)
+		{
+			erros++;
+			printf("[l.%d] ERROR : %s %s\n",s->linha,s->id,ERRO_UNDEF);
+		}
+		else
+		{
+			if(!s->usado && strcmp(s->id,"main"))
+			{
+				printf("[l.%d] WARNING: %s %s\n",s->linha,s->id,WRNG_NUSED);
+			}
+		}
+	}
+	
+	printf("----REPORT SEMANTICO----\nPrograma com %d linhas\nHouveram %d declaracoes\nHouveram %d erros\n",yylineno-1,cont_declr_tot,erros);
+	printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tLINHA\n");
+	for(i=0;i<TS->length;i++)
+	{
+		Simbolo *s = (Simbolo*)vector_get(TS,i);
+		printf("%s\t%s\t%s\t%d\t\t%d\t%d\n",s->kind,s->tipo,s->id,s->declarado,s->usado,s->linha);
+	}
+	if(!erros)
+	{
+		printf("%s\n",SEMANTICAMENTE_CORRETO);
 	}
 	destroy_vector(TS);
 	return 0;
