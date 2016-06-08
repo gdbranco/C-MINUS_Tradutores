@@ -1,4 +1,0 @@
-BNF adotada
-http://www.sierranevada.edu/snow/ExamplesX/C-Syntax.pdf
-
-Comandos obrigatorios

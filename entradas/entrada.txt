@@ -1,8 +1,10 @@
 int a,b,c;
-float e;
-void teste()
+teste()
 {
-	while (a < d)
+	print(2);
+	print(a);
+	read(a);
+	while (a < b)
 	{
 		a <- a + 1;
 	}
@@ -18,11 +20,9 @@ void teste()
 		a <- 2;
 	}
 }
-int k;
-void main()
+main()
 {
 	a <- (b / 2) + 3;
 	b <- (1/2) * 3 /(2/5);
 	teste();
-	abacate();
 }
