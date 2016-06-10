@@ -52,7 +52,9 @@ typedef struct _simbolo{
 	int linha;
 }Simbolo;
 vector_p TS;
-void doset();
+vector_p expres;
+void do_popExpression();
+void do_popVAR(char* id);
 void storeVAR(char *id);
 void loadVAR(char *id);
 void insereVAR(char* id);
@@ -79,10 +81,35 @@ void storeVAR(char *id)
 		emitRM(ST,ac,posicao,gp);
 	}
 }
-void doset()
+
+void do_popVAR(char* id)
 {
+	if(expres->length>0)
+	{
+		int *i = (int*)vector_get(expres,expres->length-1);
+		emitRM(LDC,ac,*i,0);
+	}
+	storeVAR(id);
+}
+void do_popExpression()
+{
+	int *i;
+	if(expres->length>1)
+	{
+		i = (int*)vector_get(expres,expres->length-1);
+		emitRM(LDC,ac,*i,0);
+		i = NULL;
+		vector_remove(expres,expres->length-1);
+	}
 	emitRM(ST,ac,memoffset--,mp);
 	emitRM(LD,ac1,++memoffset,mp);
+	if(expres->length>0)
+	{
+		i = (int*)vector_get(expres,expres->length-1);
+		emitRM(LDC,ac,*i,0);
+		i=NULL;
+		vector_remove(expres,expres->length-1);
+	}
 }
 
 void loadVAR(char* id)
@@ -228,11 +255,16 @@ statement: exp_statement {;}
 | cmpst_statement {;};
 
 print_statement: PRINT '(' exp_simples ')' ';' 
-	{
-		emitRO(OUT,ac,0,0);
-	};
+{
+	emitRO(OUT,ac,0,0);
+};
 
-read_statement: READ '(' id ')' ';' {insereVAR($id);}
+read_statement: READ '(' id ')' ';'
+{
+	insereVAR($id);
+	emitRO(IN,ac,0,0);
+	storeVAR($id);
+}
 
 sel_statement: op_if '(' exp ')' statement %prec IFX{;} 
 | op_if '(' exp ')' statement op_else statement {;};
@@ -243,30 +275,30 @@ exp_statement: exp ';' {;} ;
 
 exp: id op_atrib exp
 {
-	storeVAR($id);
+	do_popVAR($id);
 }
 | exp_simples {;};
 
 exp_simples: exp_add op_relacional exp_add {;}
 | exp_add {;};
 
-exp_add: exp_add op_add {doset();} term 
+exp_add: exp_add op_add term 
+{
+	do_popExpression();
+	if(strcmp($op_add,"+")==0)
 	{
-		emitRM(ST,ac,memoffset--,mp);
-		emitRM(LD,ac1,++memoffset,mp);
-		if(strcmp($op_add,"+")==0)
-		{
-			emitRO(ADD,ac,ac1,ac);
-		}
-		else
-		{
-			emitRO(SUB,ac,ac1,ac);
-		}
+		emitRO(ADD,ac,ac1,ac);
 	}
+	else
+	{
+		emitRO(SUB,ac,ac1,ac);
+	}
+}
 | term {;};
 
-term: term op_mult {doset();} fator
+term: term op_mult fator
 {
+	do_popExpression();
 	if(strcmp($op_mult,"*")==0)
 	{
 		emitRO(MUL,ac,ac1,ac);
@@ -281,31 +313,34 @@ term: term op_mult {doset();} fator
 fator: '(' exp ')' {;}
 | call {;}
 | id {loadVAR($id);}
-| inteiro {emitRM(LDC,ac,$inteiro,0);};
-
-call: 
-	id '('')' 
+| inteiro 
 	{
-		//printf("Chamando funcao %s\n",$id);
-		int posicao = nameinTS($id,"fun");
-		if(posicao==-1)
-		{
-			Simbolo s;
-			strcpy(s.kind,"fun");
-			strcpy(s.tipo,"undef");
-			strcpy(s.id,$id);
-			s.declarado = 0;
-			s.usado = 1;
-			s.linha = yylineno;
-			insereTS(s);
-			cont_declr_tot++;
-		}
-		else
-		{
-			Simbolo *s = vector_get(TS,posicao);
-			s->usado = 1;
-		}
+		int num = $inteiro;
+		vector_add(expres,(void*)&num,sizeof(int));
 	};
+
+call: id '('')' 
+{
+	//printf("Chamando funcao %s\n",$id);
+	int posicao = nameinTS($id,"fun");
+	if(posicao==-1)
+	{
+		Simbolo s;
+		strcpy(s.kind,"fun");
+		strcpy(s.tipo,"undef");
+		strcpy(s.id,$id);
+		s.declarado = 0;
+		s.usado = 1;
+		s.linha = yylineno;
+		insereTS(s);
+		cont_declr_tot++;
+	}
+	else
+	{
+		Simbolo *s = vector_get(TS,posicao);
+		s->usado = 1;
+	}
+};
 %%
 extern FILE *yyin;
 int main (int argc, char *argv[]) 
@@ -317,6 +352,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 	TS = create_vector();
+	expres = create_vector();
 	yyin = fopen(argv[1],"r");
 	intermediario = fopen("a.tm","w");
 	if(yyin)
@@ -360,6 +396,7 @@ int main (int argc, char *argv[])
 		emitRO(HALT,0,0,0);
 	}
 	destroy_vector(TS);
+	destroy_vector(expres);
 	return 0;
 }
 yyerror (s) /* Called by yyparse on error */
