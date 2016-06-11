@@ -3,6 +3,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "src/vector.h"
 #define ERRO_UNDEF "nao declarado"
 #define WRNG_NUSED "nao usado"
@@ -121,7 +122,9 @@ void do_popExpression()
 	{
 		i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
 		if(i->hasP)
+		{
 			++memoffset;
+		}
 		emitInstruction(*i);
 		i = NULL;
 		vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
@@ -347,6 +350,10 @@ exp_add:
 		{
 			emitInstruction(cria_Instruction(RO,SUB,ac,ac1,ac,0));
 		}
+		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1); //Instrucao LD que deve ser inserida
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
+		memoffset--;
+		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 	}
 	| term {;};
 
@@ -362,20 +369,16 @@ term:
 		{
 			emitInstruction(cria_Instruction(RO,DIV,ac,ac1,ac,0));
 		}
+		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1); //Instrucao LD que deve ser inserida
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
+		memoffset--;
+		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 	}
 	| fator {;};
 
 fator:
 	'(' exp ')'
-	{
-	
-	//		emitRM(LD,ac,++memoffset,mp);
-	//		emitRM(LD,ac1,++memoffset,mp);
-		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1);
-		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,1));
-		memoffset--;
-		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
-	}
+	{;}
 	| call {;}
 	| ID 
 	{
