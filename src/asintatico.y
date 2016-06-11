@@ -45,9 +45,8 @@ int cont_declr_var_linha = 0;
 int cont_declr_tot = 0;
 int instruction_counter = 0;
 int memoffset = 0;
-int need = 0;
 vector_p TS;
-vector_p Instruction_list;
+vector_p ExpInstruction_list;
 FILE *intermediario;
 typedef struct _instruction{
 	char op[5];
@@ -55,9 +54,10 @@ typedef struct _instruction{
 	int r;
 	int s;
 	int t;
+	int hasP;
 }Instruction;
-Instruction cria_Instruction(int kind,char *op , int r, int s, int t);
-Instruction cria_Instruction(int kind, char *op, int r, int s, int t)
+Instruction cria_Instruction(int kind,char *op , int r, int s, int t, int hasP);
+Instruction cria_Instruction(int kind, char *op, int r, int s, int t, int hasP)
 {
 	Instruction i;
 	i.kind = kind;
@@ -65,6 +65,7 @@ Instruction cria_Instruction(int kind, char *op, int r, int s, int t)
 	i.r = r;
 	i.s = s;
 	i.t = t;
+	i.hasP = hasP;
 	return i;
 }
 typedef struct _simbolo{
@@ -77,7 +78,7 @@ typedef struct _simbolo{
 }Simbolo;
 void cria_Simbolo(char* id,char* kind);
 //CRIACAO DE CODIGO
-void do_popExpression(int need);
+void do_popExpression();
 void storeVAR(char *id);
 void loadVAR(char *id);
 void emitInstruction(Instruction inst);
@@ -108,38 +109,33 @@ void storeVAR(char *id)
 	if(posicao!=-1)
 	{
 		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-		Instruction i = cria_Instruction(RM,ST,ac,gp,posicao);
+		Instruction i = cria_Instruction(RM,ST,ac,gp,posicao,0);
 		emitInstruction(i);
 	}
 }
 
-void do_popExpression(int need)
+void do_popExpression()
 {
-	if(need<=2)
+	Instruction *i;
+	if(ExpInstruction_list->length>1)
 	{
-		Instruction *i;
-		if(Instruction_list->length>1)
-		{
-			i = (Instruction*)vector_get(Instruction_list,Instruction_list->length-1);
-			emitInstruction(*i);
-			i = NULL;
-			vector_remove(Instruction_list,Instruction_list->length-1);
-		}
-		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset--));
-		emitInstruction(cria_Instruction(RM,LD,ac1,mp,++memoffset));
-		if(Instruction_list->length>0)
-		{
-			i = (Instruction*)vector_get(Instruction_list,Instruction_list->length-1);
-			emitInstruction(*i);
-			i=NULL;
-			vector_remove(Instruction_list,Instruction_list->length-1);
-		}
+		i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
+		if(i->hasP)
+			++memoffset;
+		emitInstruction(*i);
+		i = NULL;
+		vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 	}
-	else
+	emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset--,0));
+	emitInstruction(cria_Instruction(RM,LD,ac1,mp,++memoffset,0));
+	if(ExpInstruction_list->length>0)
 	{
-//		emitRM(LD,ac,++memoffset,mp);
-//		emitRM(LD,ac1,++memoffset,mp);
-		need=0;
+		i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
+		if(i->hasP)
+			++memoffset;
+		emitInstruction(*i);
+		i=NULL;
+		vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 	}
 }
 
@@ -147,8 +143,8 @@ void loadVAR(char* id)
 {
 	int posicao = busca_Simbolo(id,"var");
 	Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-	Instruction inst = cria_Instruction(RM,LD,ac,gp,posicao);
-	vector_add(Instruction_list,(void*)&inst,sizeof(Instruction));
+	Instruction inst = cria_Instruction(RM,LD,ac,gp,posicao,0);
+	vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 }
 
 void insereTS(Simbolo s)
@@ -301,14 +297,14 @@ statement:
 print_statement:
 	PRINT '(' exp ')' ';' 
 	{
-		emitInstruction(cria_Instruction(RO,OUT,ac,0,0));
+		emitInstruction(cria_Instruction(RO,OUT,ac,0,0,0));
 	};
 
 read_statement:
 	READ '(' ID ')' ';'
 	{
 		marcausado_Simbolo($ID,"var");
-		emitInstruction(cria_Instruction(RO,IN,ac,0,0));
+		emitInstruction(cria_Instruction(RO,IN,ac,0,0,0));
 		storeVAR($ID);
 	};
 
@@ -325,11 +321,11 @@ exp_statement:
 exp:
 	ID {marcausado_Simbolo($ID,"var");} ASSIGN exp
 	{
-		if(Instruction_list->length==1)
+		if(ExpInstruction_list->length==1)
 		{
-			Instruction *i = (Instruction*)vector_get(Instruction_list,Instruction_list->length-1);
+			Instruction *i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
 			emitInstruction(*i);
-			vector_remove(Instruction_list,Instruction_list->length-1);
+			vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 		}
 		storeVAR($ID);
 	}
@@ -342,14 +338,14 @@ exp_simples:
 exp_add:
 	exp_add OADD term
 	{
-		do_popExpression(need);
+		do_popExpression();
 		if(strcmp($OADD,"+")==0)
 		{
-			emitInstruction(cria_Instruction(RO,ADD,ac,ac1,ac));
+			emitInstruction(cria_Instruction(RO,ADD,ac,ac1,ac,0));
 		}
 		else
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac1,ac));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac1,ac,0));
 		}
 	}
 	| term {;};
@@ -357,14 +353,14 @@ exp_add:
 term:
 	term OMULT fator
 	{
-		do_popExpression(need);
+		do_popExpression();
 		if(strcmp($OMULT,"*")==0)
 		{
-			emitInstruction(cria_Instruction(RO,MUL,ac,ac1,ac));
+			emitInstruction(cria_Instruction(RO,MUL,ac,ac1,ac,0));
 		}
 		else
 		{
-			emitInstruction(cria_Instruction(RO,DIV,ac,ac1,ac));
+			emitInstruction(cria_Instruction(RO,DIV,ac,ac1,ac,0));
 		}
 	}
 	| fator {;};
@@ -372,7 +368,13 @@ term:
 fator:
 	'(' exp ')'
 	{
-		//need++;
+	
+	//		emitRM(LD,ac,++memoffset,mp);
+	//		emitRM(LD,ac1,++memoffset,mp);
+		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1);
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,1));
+		memoffset--;
+		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 	}
 	| call {;}
 	| ID 
@@ -382,8 +384,8 @@ fator:
 	}
 	| INTEIRO
 	{
-		Instruction inst = cria_Instruction(RM,LDC,ac,0,$INTEIRO);
-		vector_add(Instruction_list,(void*)&inst,sizeof(Instruction));
+		Instruction inst = cria_Instruction(RM,LDC,ac,0,$INTEIRO,0);
+		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 	};
 
 call:
@@ -402,18 +404,18 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 	TS = create_vector();
-	Instruction_list = create_vector();
+	ExpInstruction_list = create_vector();
 	yyin = fopen(argv[1],"r");
 	intermediario = fopen("a.tm","w");
 	if(yyin)
 	{
-		emitInstruction(cria_Instruction(RM,LD,6,0,0));
-		emitInstruction(cria_Instruction(RM,ST,0,0,0));
+		emitInstruction(cria_Instruction(RM,LD,6,0,0,0));
+		emitInstruction(cria_Instruction(RM,ST,0,0,0,0));
 		sint_erro = yyparse();
 	}
 	report(sint_erro);
 	destroy_vector(TS);
-	destroy_vector(Instruction_list);
+	destroy_vector(ExpInstruction_list);
 	return 0;
 }
 
@@ -455,7 +457,7 @@ void report(int sint_erro)
 	if(!erros)
 	{
 		printf("%s\n",SEMANTICAMENTE_CORRETO);
-		emitInstruction(cria_Instruction(RO,HALT,0,0,0));
+		emitInstruction(cria_Instruction(RO,HALT,0,0,0,0));
 	}
 }
 
