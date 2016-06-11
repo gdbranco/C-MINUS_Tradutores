@@ -10,6 +10,9 @@
 
 #define SINTATICAMENTE_CORRETO "O programa esta sintaticamente correto"
 #define SEMANTICAMENTE_CORRETO "O programa esta semanticamento correto"
+//INSTRUCTIONS TYPE
+#define RO 0
+#define RM 1
 //RO INSTRUCTIONS
 //RO r,s,t
 #define HALT "HALT"
@@ -43,7 +46,27 @@ int cont_declr_tot = 0;
 int instruction_counter = 0;
 int memoffset = 0;
 int need = 0;
+vector_p TS;
+vector_p Instruction_list;
 FILE *intermediario;
+typedef struct _instruction{
+	char op[5];
+	int kind;
+	int r;
+	int s;
+	int t;
+}Instruction;
+Instruction cria_Instruction(int kind,char *op , int r, int s, int t);
+Instruction cria_Instruction(int kind, char *op, int r, int s, int t)
+{
+	Instruction i;
+	i.kind = kind;
+	strcpy(i.op,op);
+	i.r = r;
+	i.s = s;
+	i.t = t;
+	return i;
+}
 typedef struct _simbolo{
 	char id[9];
 	char tipo[6];
@@ -52,30 +75,32 @@ typedef struct _simbolo{
 	char kind[6];
 	int linha;
 }Simbolo;
-vector_p TS;
-vector_p expres;
+void cria_Simbolo(char* id,char* kind);
 //CRIACAO DE CODIGO
 void do_popExpression(int need);
-void do_popVAR(char* id);
 void storeVAR(char *id);
 void loadVAR(char *id);
-void emitRO(char* opcode, int r, int s, int t);
-void emitRM(char* opcode, int r, int offset, int s);
+void emitInstruction(Instruction inst);
 //TABELA DE SIMBOLOS MANAGER
-void cria_Simbolo(char* id,char* kind);
 void insereTS(Simbolo s);
 int busca_Simbolo(char *name, char *kind);
 //REPORTS
 void report(int sint_erro);
 //
 //
-void emitRO(char* opcode, int r, int s, int t)
+void emitInstruction(Instruction inst)
 {
-	fprintf(intermediario,"%3d: %5s %d,%d,%d\n",instruction_counter++,opcode,r,s,t);
-}
-void emitRM(char* opcode, int r, int offset, int s)
-{
-	fprintf(intermediario,"%3d: %5s %d,%d(%d)\n",instruction_counter++,opcode,r,offset,s);
+	switch(inst.kind)
+	{
+		default:
+			break;
+		case RO:
+			fprintf(intermediario,"%3d: %5s %d,%d,%d\n",instruction_counter++,inst.op,inst.r,inst.s,inst.t);
+			break;
+		case RM:
+			fprintf(intermediario,"%3d: %5s %d,%d(%d)\n",instruction_counter++,inst.op,inst.r,inst.t,inst.s);
+			break;
+	}
 }
 void storeVAR(char *id)
 {
@@ -83,45 +108,37 @@ void storeVAR(char *id)
 	if(posicao!=-1)
 	{
 		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-		emitRM(LD,ac,++memoffset,mp);
-		emitRM(ST,ac,posicao,gp);
+		Instruction i = cria_Instruction(RM,ST,ac,gp,posicao);
+		emitInstruction(i);
 	}
 }
 
-void do_popVAR(char* id)
-{
-	if(expres->length>0)
-	{
-		int *i = (int*)vector_get(expres,expres->length-1);
-		emitRM(LDC,ac,*i,0);
-	}
-}
 void do_popExpression(int need)
 {
 	if(need<=2)
 	{
-		int *i;
-		if(expres->length>1)
+		Instruction *i;
+		if(Instruction_list->length>1)
 		{
-			i = (int*)vector_get(expres,expres->length-1);
-			emitRM(LDC,ac,*i,0);
+			i = (Instruction*)vector_get(Instruction_list,Instruction_list->length-1);
+			emitInstruction(*i);
 			i = NULL;
-			vector_remove(expres,expres->length-1);
+			vector_remove(Instruction_list,Instruction_list->length-1);
 		}
-		emitRM(ST,ac,memoffset--,mp);
-		emitRM(LD,ac1,++memoffset,mp);
-		if(expres->length>0)
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset--));
+		emitInstruction(cria_Instruction(RM,LD,ac1,mp,++memoffset));
+		if(Instruction_list->length>0)
 		{
-			i = (int*)vector_get(expres,expres->length-1);
-			emitRM(LDC,ac,*i,0);
+			i = (Instruction*)vector_get(Instruction_list,Instruction_list->length-1);
+			emitInstruction(*i);
 			i=NULL;
-			vector_remove(expres,expres->length-1);
+			vector_remove(Instruction_list,Instruction_list->length-1);
 		}
 	}
 	else
 	{
-		emitRM(LD,ac,++memoffset,mp);
-		emitRM(LD,ac1,++memoffset,mp);
+//		emitRM(LD,ac,++memoffset,mp);
+//		emitRM(LD,ac1,++memoffset,mp);
 		need=0;
 	}
 }
@@ -130,7 +147,8 @@ void loadVAR(char* id)
 {
 	int posicao = busca_Simbolo(id,"var");
 	Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-	emitRM(LD,ac,posicao,gp);
+	Instruction inst = cria_Instruction(RM,LD,ac,gp,posicao);
+	vector_add(Instruction_list,(void*)&inst,sizeof(Instruction));
 }
 
 void insereTS(Simbolo s)
@@ -283,17 +301,15 @@ statement:
 print_statement:
 	PRINT '(' exp ')' ';' 
 	{
-//		emitRO(OUT,ac,0,0);
-//		emitRM(LD,ac,++memoffset,mp);
+		emitInstruction(cria_Instruction(RO,OUT,ac,0,0));
 	};
 
 read_statement:
 	READ '(' ID ')' ';'
 	{
 		marcausado_Simbolo($ID,"var");
-//		insereVAR($ID);
-//		emitRO(IN,ac,0,0);
-//		storeVAR($ID);
+		emitInstruction(cria_Instruction(RO,IN,ac,0,0));
+		storeVAR($ID);
 	};
 
 sel_statement:
@@ -304,51 +320,52 @@ rpt_statement:
 	RPT '(' exp ')' statement {;};
 
 exp_statement:
-	exp ';' {;};
+	exp ';'{;};
 
 exp:
-	ID ASSIGN exp
+	ID {marcausado_Simbolo($ID,"var");} ASSIGN exp
 	{
-		marcausado_Simbolo($ID,"var");
-//		storeVAR($ID);
+		if(Instruction_list->length==1)
+		{
+			Instruction *i = (Instruction*)vector_get(Instruction_list,Instruction_list->length-1);
+			emitInstruction(*i);
+			vector_remove(Instruction_list,Instruction_list->length-1);
+		}
+		storeVAR($ID);
 	}
 	| exp_simples {;};
 
 exp_simples:
 	exp_add REL exp_add {;}
-	| exp_add
-	{
-		//guarda o resultado da expressao num temporario
-//		emitRM(ST,ac,memoffset--,mp);
-	};
+	| exp_add {;};
 
 exp_add:
 	exp_add OADD term
 	{
-//		do_popExpression(need);
-//		if(strcmp($OADD,"+")==0)
-//		{
-//			emitRO(ADD,ac,ac1,ac);
-//		}
-//		else
-//		{
-//			emitRO(SUB,ac,ac1,ac);
-//		}
+		do_popExpression(need);
+		if(strcmp($OADD,"+")==0)
+		{
+			emitInstruction(cria_Instruction(RO,ADD,ac,ac1,ac));
+		}
+		else
+		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac1,ac));
+		}
 	}
 	| term {;};
 
 term:
 	term OMULT fator
 	{
-//		do_popExpression(need);
-//		if(strcmp($OMULT,"*")==0)
-//		{
-//			emitRO(MUL,ac,ac1,ac);
-//		}
-//		else
-//		{
-//			emitRO(DIV,ac,ac1,ac);
-//		}
+		do_popExpression(need);
+		if(strcmp($OMULT,"*")==0)
+		{
+			emitInstruction(cria_Instruction(RO,MUL,ac,ac1,ac));
+		}
+		else
+		{
+			emitInstruction(cria_Instruction(RO,DIV,ac,ac1,ac));
+		}
 	}
 	| fator {;};
 
@@ -358,21 +375,20 @@ fator:
 		//need++;
 	}
 	| call {;}
-	| ID
+	| ID 
 	{
 		marcausado_Simbolo($ID,"var");
-		//loadVAR($ID);
+		loadVAR($ID);
 	}
 	| INTEIRO
 	{
-//		int num = $INTEIRO;
-//		vector_add(expres,(void*)&num,sizeof(int));
+		Instruction inst = cria_Instruction(RM,LDC,ac,0,$INTEIRO);
+		vector_add(Instruction_list,(void*)&inst,sizeof(Instruction));
 	};
 
 call:
-	ID '('')' 
+	ID '('')'
 	{
-		//printf("Chamando funcao %s\n",$id);
 		marcausado_Simbolo($ID,"fun");
 	};
 %%
@@ -386,24 +402,24 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 	TS = create_vector();
-	expres = create_vector();
+	Instruction_list = create_vector();
 	yyin = fopen(argv[1],"r");
 	intermediario = fopen("a.tm","w");
 	if(yyin)
 	{
-		emitRM(LD,6,0,0);
-		emitRM(ST,0,0,0);
+		emitInstruction(cria_Instruction(RM,LD,6,0,0));
+		emitInstruction(cria_Instruction(RM,ST,0,0,0));
 		sint_erro = yyparse();
 	}
 	report(sint_erro);
 	destroy_vector(TS);
-	destroy_vector(expres);
+	destroy_vector(Instruction_list);
 	return 0;
 }
 
 void report(int sint_erro)
 {
-	int erros;
+	int erros = 0;
 	if(!sint_erro)
 		printf("%s\n",SINTATICAMENTE_CORRETO);
 	int i = 0;
@@ -439,7 +455,7 @@ void report(int sint_erro)
 	if(!erros)
 	{
 		printf("%s\n",SEMANTICAMENTE_CORRETO);
-		//emitRO(HALT,0,0,0);
+		emitInstruction(cria_Instruction(RO,HALT,0,0,0));
 	}
 }
 

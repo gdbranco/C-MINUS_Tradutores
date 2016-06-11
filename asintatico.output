@@ -42,42 +42,44 @@ Grammar
 
    25 exp_statement: exp ';'
 
-   26 exp: ID ASSIGN exp
-   27    | exp_simples
+   26 $@2: %empty
 
-   28 exp_simples: exp_add REL exp_add
-   29            | exp_add
+   27 exp: ID $@2 ASSIGN exp
+   28    | exp_simples
 
-   30 exp_add: exp_add OADD term
-   31        | term
+   29 exp_simples: exp_add REL exp_add
+   30            | exp_add
 
-   32 term: term OMULT fator
-   33     | fator
+   31 exp_add: exp_add OADD term
+   32        | term
 
-   34 fator: '(' exp ')'
-   35      | call
-   36      | ID
-   37      | INTEIRO
+   33 term: term OMULT fator
+   34     | fator
 
-   38 call: ID '(' ')'
+   35 fator: '(' exp ')'
+   36      | call
+   37      | ID
+   38      | INTEIRO
+
+   39 call: ID '(' ')'
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
-'(' (40) 10 20 21 22 23 24 34 38
-')' (41) 10 20 21 22 23 24 34 38
+'(' (40) 10 20 21 22 23 24 35 39
+')' (41) 10 20 21 22 23 24 35 39
 ',' (44) 8
 ';' (59) 7 20 21 25
 error (256)
-ID (258) 7 8 10 21 26 36 38
-INTEIRO (259) 37
+ID (258) 7 8 10 21 27 37 39
+INTEIRO (259) 38
 PRINT (260) 20
 READ (261) 21
-ASSIGN (262) 26
-OADD (263) 30
-OMULT (264) 32
-REL (265) 28
+ASSIGN (262) 27
+OADD (263) 31
+OMULT (264) 33
+REL (265) 29
 RPT (266) 24
 IF (267) 22 23
 IFX (268)
@@ -122,17 +124,19 @@ rpt_statement (36)
 exp_statement (37)
     on left: 25, on right: 14
 exp (38)
-    on left: 26 27, on right: 20 22 23 24 25 26 34
-exp_simples (39)
-    on left: 28 29, on right: 27
-exp_add (40)
-    on left: 30 31, on right: 28 29 30
-term (41)
-    on left: 32 33, on right: 30 31 32
-fator (42)
-    on left: 34 35 36 37, on right: 32 33
-call (43)
-    on left: 38, on right: 35
+    on left: 27 28, on right: 20 22 23 24 25 27 35
+$@2 (39)
+    on left: 26, on right: 27
+exp_simples (40)
+    on left: 29 30, on right: 28
+exp_add (41)
+    on left: 31 32, on right: 29 30 31
+term (42)
+    on left: 33 34, on right: 31 32 33
+fator (43)
+    on left: 35 36 37 38, on right: 33 34
+call (44)
+    on left: 39, on right: 36
 
 
 State 0
@@ -324,21 +328,23 @@ State 19
 
 State 20
 
-   26 exp: ID . ASSIGN exp
-   36 fator: ID .
-   38 call: ID . '(' ')'
+   27 exp: ID . $@2 ASSIGN exp
+   37 fator: ID .
+   39 call: ID . '(' ')'
 
-    ASSIGN  shift, and go to state 41
-    '('     shift, and go to state 42
+    '('  shift, and go to state 41
 
-    $default  reduce using rule 36 (fator)
+    ASSIGN    reduce using rule 26 ($@2)
+    $default  reduce using rule 37 (fator)
+
+    $@2  go to state 42
 
 
 State 21
 
-   37 fator: INTEIRO .
+   38 fator: INTEIRO .
 
-    $default  reduce using rule 37 (fator)
+    $default  reduce using rule 38 (fator)
 
 
 State 22
@@ -372,7 +378,7 @@ State 25
 
 State 26
 
-   34 fator: '(' . exp ')'
+   35 fator: '(' . exp ')'
 
     ID       shift, and go to state 20
     INTEIRO  shift, and go to state 21
@@ -476,68 +482,59 @@ State 35
 
 State 36
 
-   27 exp: exp_simples .
+   28 exp: exp_simples .
 
-    $default  reduce using rule 27 (exp)
+    $default  reduce using rule 28 (exp)
 
 
 State 37
 
-   28 exp_simples: exp_add . REL exp_add
-   29            | exp_add .
-   30 exp_add: exp_add . OADD term
+   29 exp_simples: exp_add . REL exp_add
+   30            | exp_add .
+   31 exp_add: exp_add . OADD term
 
     OADD  shift, and go to state 51
     REL   shift, and go to state 52
 
-    $default  reduce using rule 29 (exp_simples)
+    $default  reduce using rule 30 (exp_simples)
 
 
 State 38
 
-   31 exp_add: term .
-   32 term: term . OMULT fator
+   32 exp_add: term .
+   33 term: term . OMULT fator
 
     OMULT  shift, and go to state 53
 
-    $default  reduce using rule 31 (exp_add)
+    $default  reduce using rule 32 (exp_add)
 
 
 State 39
 
-   33 term: fator .
+   34 term: fator .
 
-    $default  reduce using rule 33 (term)
+    $default  reduce using rule 34 (term)
 
 
 State 40
 
-   35 fator: call .
+   36 fator: call .
 
-    $default  reduce using rule 35 (fator)
+    $default  reduce using rule 36 (fator)
 
 
 State 41
 
-   26 exp: ID ASSIGN . exp
+   39 call: ID '(' . ')'
 
-    ID       shift, and go to state 20
-    INTEIRO  shift, and go to state 21
-    '('      shift, and go to state 26
-
-    exp          go to state 54
-    exp_simples  go to state 36
-    exp_add      go to state 37
-    term         go to state 38
-    fator        go to state 39
-    call         go to state 40
+    ')'  shift, and go to state 54
 
 
 State 42
 
-   38 call: ID '(' . ')'
+   27 exp: ID $@2 . ASSIGN exp
 
-    ')'  shift, and go to state 55
+    ASSIGN  shift, and go to state 55
 
 
 State 43
@@ -598,7 +595,7 @@ State 46
 
 State 47
 
-   34 fator: '(' exp . ')'
+   35 fator: '(' exp . ')'
 
     ')'  shift, and go to state 60
 
@@ -626,7 +623,7 @@ State 50
 
 State 51
 
-   30 exp_add: exp_add OADD . term
+   31 exp_add: exp_add OADD . term
 
     ID       shift, and go to state 61
     INTEIRO  shift, and go to state 21
@@ -639,7 +636,7 @@ State 51
 
 State 52
 
-   28 exp_simples: exp_add REL . exp_add
+   29 exp_simples: exp_add REL . exp_add
 
     ID       shift, and go to state 61
     INTEIRO  shift, and go to state 21
@@ -653,7 +650,7 @@ State 52
 
 State 53
 
-   32 term: term OMULT . fator
+   33 term: term OMULT . fator
 
     ID       shift, and go to state 61
     INTEIRO  shift, and go to state 21
@@ -665,37 +662,46 @@ State 53
 
 State 54
 
-   26 exp: ID ASSIGN exp .
+   39 call: ID '(' ')' .
 
-    $default  reduce using rule 26 (exp)
+    $default  reduce using rule 39 (call)
 
 
 State 55
 
-   38 call: ID '(' ')' .
+   27 exp: ID $@2 ASSIGN . exp
 
-    $default  reduce using rule 38 (call)
+    ID       shift, and go to state 20
+    INTEIRO  shift, and go to state 21
+    '('      shift, and go to state 26
+
+    exp          go to state 65
+    exp_simples  go to state 36
+    exp_add      go to state 37
+    term         go to state 38
+    fator        go to state 39
+    call         go to state 40
 
 
 State 56
 
    20 print_statement: PRINT '(' exp . ')' ';'
 
-    ')'  shift, and go to state 65
+    ')'  shift, and go to state 66
 
 
 State 57
 
    21 read_statement: READ '(' ID . ')' ';'
 
-    ')'  shift, and go to state 66
+    ')'  shift, and go to state 67
 
 
 State 58
 
    24 rpt_statement: RPT '(' exp . ')' statement
 
-    ')'  shift, and go to state 67
+    ')'  shift, and go to state 68
 
 
 State 59
@@ -703,99 +709,77 @@ State 59
    22 sel_statement: IF '(' exp . ')' statement
    23              | IF '(' exp . ')' statement ELSE statement
 
-    ')'  shift, and go to state 68
+    ')'  shift, and go to state 69
 
 
 State 60
 
-   34 fator: '(' exp ')' .
+   35 fator: '(' exp ')' .
 
-    $default  reduce using rule 34 (fator)
+    $default  reduce using rule 35 (fator)
 
 
 State 61
 
-   36 fator: ID .
-   38 call: ID . '(' ')'
+   37 fator: ID .
+   39 call: ID . '(' ')'
 
-    '('  shift, and go to state 42
+    '('  shift, and go to state 41
 
-    $default  reduce using rule 36 (fator)
+    $default  reduce using rule 37 (fator)
 
 
 State 62
 
-   30 exp_add: exp_add OADD term .
-   32 term: term . OMULT fator
+   31 exp_add: exp_add OADD term .
+   33 term: term . OMULT fator
 
     OMULT  shift, and go to state 53
 
-    $default  reduce using rule 30 (exp_add)
+    $default  reduce using rule 31 (exp_add)
 
 
 State 63
 
-   28 exp_simples: exp_add REL exp_add .
-   30 exp_add: exp_add . OADD term
+   29 exp_simples: exp_add REL exp_add .
+   31 exp_add: exp_add . OADD term
 
     OADD  shift, and go to state 51
 
-    $default  reduce using rule 28 (exp_simples)
+    $default  reduce using rule 29 (exp_simples)
 
 
 State 64
 
-   32 term: term OMULT fator .
+   33 term: term OMULT fator .
 
-    $default  reduce using rule 32 (term)
+    $default  reduce using rule 33 (term)
 
 
 State 65
 
-   20 print_statement: PRINT '(' exp ')' . ';'
+   27 exp: ID $@2 ASSIGN exp .
 
-    ';'  shift, and go to state 69
+    $default  reduce using rule 27 (exp)
 
 
 State 66
 
-   21 read_statement: READ '(' ID ')' . ';'
+   20 print_statement: PRINT '(' exp ')' . ';'
 
     ';'  shift, and go to state 70
 
 
 State 67
 
-   24 rpt_statement: RPT '(' exp ')' . statement
+   21 read_statement: READ '(' ID ')' . ';'
 
-    ID              shift, and go to state 20
-    INTEIRO         shift, and go to state 21
-    PRINT           shift, and go to state 22
-    READ            shift, and go to state 23
-    RPT             shift, and go to state 24
-    IF              shift, and go to state 25
-    DEL_BLOCO_ABRE  shift, and go to state 18
-    '('             shift, and go to state 26
-
-    cmpst_statement  go to state 27
-    statement        go to state 71
-    print_statement  go to state 30
-    read_statement   go to state 31
-    sel_statement    go to state 32
-    rpt_statement    go to state 33
-    exp_statement    go to state 34
-    exp              go to state 35
-    exp_simples      go to state 36
-    exp_add          go to state 37
-    term             go to state 38
-    fator            go to state 39
-    call             go to state 40
+    ';'  shift, and go to state 71
 
 
 State 68
 
-   22 sel_statement: IF '(' exp ')' . statement
-   23              | IF '(' exp ')' . statement ELSE statement
+   24 rpt_statement: RPT '(' exp ')' . statement
 
     ID              shift, and go to state 20
     INTEIRO         shift, and go to state 21
@@ -823,38 +807,8 @@ State 68
 
 State 69
 
-   20 print_statement: PRINT '(' exp ')' ';' .
-
-    $default  reduce using rule 20 (print_statement)
-
-
-State 70
-
-   21 read_statement: READ '(' ID ')' ';' .
-
-    $default  reduce using rule 21 (read_statement)
-
-
-State 71
-
-   24 rpt_statement: RPT '(' exp ')' statement .
-
-    $default  reduce using rule 24 (rpt_statement)
-
-
-State 72
-
-   22 sel_statement: IF '(' exp ')' statement .
-   23              | IF '(' exp ')' statement . ELSE statement
-
-    ELSE  shift, and go to state 73
-
-    $default  reduce using rule 22 (sel_statement)
-
-
-State 73
-
-   23 sel_statement: IF '(' exp ')' statement ELSE . statement
+   22 sel_statement: IF '(' exp ')' . statement
+   23              | IF '(' exp ')' . statement ELSE statement
 
     ID              shift, and go to state 20
     INTEIRO         shift, and go to state 21
@@ -866,7 +820,7 @@ State 73
     '('             shift, and go to state 26
 
     cmpst_statement  go to state 27
-    statement        go to state 74
+    statement        go to state 73
     print_statement  go to state 30
     read_statement   go to state 31
     sel_statement    go to state 32
@@ -880,7 +834,66 @@ State 73
     call             go to state 40
 
 
+State 70
+
+   20 print_statement: PRINT '(' exp ')' ';' .
+
+    $default  reduce using rule 20 (print_statement)
+
+
+State 71
+
+   21 read_statement: READ '(' ID ')' ';' .
+
+    $default  reduce using rule 21 (read_statement)
+
+
+State 72
+
+   24 rpt_statement: RPT '(' exp ')' statement .
+
+    $default  reduce using rule 24 (rpt_statement)
+
+
+State 73
+
+   22 sel_statement: IF '(' exp ')' statement .
+   23              | IF '(' exp ')' statement . ELSE statement
+
+    ELSE  shift, and go to state 74
+
+    $default  reduce using rule 22 (sel_statement)
+
+
 State 74
+
+   23 sel_statement: IF '(' exp ')' statement ELSE . statement
+
+    ID              shift, and go to state 20
+    INTEIRO         shift, and go to state 21
+    PRINT           shift, and go to state 22
+    READ            shift, and go to state 23
+    RPT             shift, and go to state 24
+    IF              shift, and go to state 25
+    DEL_BLOCO_ABRE  shift, and go to state 18
+    '('             shift, and go to state 26
+
+    cmpst_statement  go to state 27
+    statement        go to state 75
+    print_statement  go to state 30
+    read_statement   go to state 31
+    sel_statement    go to state 32
+    rpt_statement    go to state 33
+    exp_statement    go to state 34
+    exp              go to state 35
+    exp_simples      go to state 36
+    exp_add          go to state 37
+    term             go to state 38
+    fator            go to state 39
+    call             go to state 40
+
+
+State 75
 
    23 sel_statement: IF '(' exp ')' statement ELSE statement .
 
