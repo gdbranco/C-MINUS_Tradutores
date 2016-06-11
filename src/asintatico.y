@@ -6,6 +6,7 @@
 #include "src/vector.h"
 #define ERRO_UNDEF "nao declarado"
 #define WRNG_NUSED "nao usado"
+#define ERROR_2DEF "declarado mais de uma vez"
 
 #define SINTATICAMENTE_CORRETO "O programa esta sintaticamente correto"
 #define SEMANTICAMENTE_CORRETO "O programa esta semanticamento correto"
@@ -39,7 +40,6 @@
 extern yylineno;
 int cont_declr_var_linha = 0;
 int cont_declr_tot = 0;
-int erros = 0;
 int instruction_counter = 0;
 int memoffset = 0;
 int need = 0;
@@ -54,16 +54,21 @@ typedef struct _simbolo{
 }Simbolo;
 vector_p TS;
 vector_p expres;
+//CRIACAO DE CODIGO
 void do_popExpression(int need);
 void do_popVAR(char* id);
 void storeVAR(char *id);
 void loadVAR(char *id);
-void insereVAR(char* id);
-void insereTS(Simbolo s);
-int nameinTS(char *name, char *kind);
-int getIndexTS(Simbolo b);
 void emitRO(char* opcode, int r, int s, int t);
 void emitRM(char* opcode, int r, int offset, int s);
+//TABELA DE SIMBOLOS MANAGER
+void cria_Simbolo(char* id,char* kind);
+void insereTS(Simbolo s);
+int busca_Simbolo(char *name, char *kind);
+//REPORTS
+void report(int sint_erro);
+//
+//
 void emitRO(char* opcode, int r, int s, int t)
 {
 	fprintf(intermediario,"%3d: %5s %d,%d,%d\n",instruction_counter++,opcode,r,s,t);
@@ -74,11 +79,11 @@ void emitRM(char* opcode, int r, int offset, int s)
 }
 void storeVAR(char *id)
 {
-	insereVAR(id);
-	int posicao = nameinTS(id,"var");
+	int posicao = busca_Simbolo(id,"var");
 	if(posicao!=-1)
 	{
 		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
+		emitRM(LD,ac,++memoffset,mp);
 		emitRM(ST,ac,posicao,gp);
 	}
 }
@@ -90,11 +95,10 @@ void do_popVAR(char* id)
 		int *i = (int*)vector_get(expres,expres->length-1);
 		emitRM(LDC,ac,*i,0);
 	}
-	storeVAR(id);
 }
 void do_popExpression(int need)
 {
-	if(!need)
+	if(need<=2)
 	{
 		int *i;
 		if(expres->length>1)
@@ -116,51 +120,72 @@ void do_popExpression(int need)
 	}
 	else
 	{
-		need = 0;
 		emitRM(LD,ac,++memoffset,mp);
 		emitRM(LD,ac1,++memoffset,mp);
+		need=0;
 	}
 }
 
 void loadVAR(char* id)
 {
-	insereVAR(id);
-	int posicao = nameinTS(id,"var");
+	int posicao = busca_Simbolo(id,"var");
 	Simbolo *s = (Simbolo *)vector_get(TS,posicao);
 	emitRM(LD,ac,posicao,gp);
-}
-
-void insereVAR(char* id)
-{
-	int posicao = nameinTS(id,"var");
-	if(posicao==-1)
-	{
-		Simbolo s;
-		strcpy(s.id,id);
-		strcpy(s.tipo,"undef");
-		strcpy(s.kind,"var");
-		s.linha = yylineno;
-		s.declarado = 0;
-		s.usado = 1;
-		insereTS(s);
-		cont_declr_tot++;
-	}
-	else
-	{
-		Simbolo *s = (Simbolo*) vector_get(TS,posicao);
-		s->usado = 1;
-	}
 }
 
 void insereTS(Simbolo s)
 {
 	vector_add(TS,(void*)&s,sizeof(Simbolo));
 }
-int getIndexTS(Simbolo b)
+
+void cria_Simbolo(char * id,char *kind)
 {
-	return vector_index(TS,(void*)&b,sizeof(Simbolo));
+	int posicao = busca_Simbolo(id,kind);
+	if(posicao==-1) //Adiciona na lista
+	{
+		if(strcmp(kind,"var")==0)
+			cont_declr_var_linha++;
+		else
+			cont_declr_tot++;
+		Simbolo s;
+		strcpy(s.tipo,"undef");
+		strcpy(s.id,id);
+		strcpy(s.kind,kind);
+		s.declarado = 1;
+		s.usado = 0;
+		s.linha = yylineno;
+		insereTS(s);
+	}
+	else //Se ja existe marca que foi declarado mais de uma vez
+	{
+		Simbolo *s = (Simbolo*)vector_get(TS,posicao);
+		s->declarado++;
+	}
 }
-int nameinTS(char *name,char *kind)
+
+void marcausado_Simbolo(char* id, char *kind)
+{
+	int posicao = busca_Simbolo(id,kind);
+	if(posicao == -1) //Se o simbolo nao existe fala que foi usado sem declarar
+	{
+		Simbolo s;
+		strcpy(s.id,id);
+		strcpy(s.kind,kind);
+		strcpy(s.tipo,"undef");
+		s.declarado = 0;
+		s.usado = 1;
+		s.linha = yylineno;
+		cont_declr_tot++;
+		insereTS(s);
+	}
+	else //Se ja existe marca usado
+	{
+		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
+		s->usado = 1;
+	}
+}
+
+int busca_Simbolo(char *name,char *kind)
 {
 	int i=0;
 	for(i=0;i<TS->length;i++)
@@ -200,162 +225,161 @@ int inum;
 
 %%
 /* Regras definindo a GLC e acoes correspondentes */
-programa: lista_declaracao {;};
+programa:
+	lista_declaracao {;};
 
-lista_declaracao: declaracao {;}
-| lista_declaracao declaracao {;};
+lista_declaracao:
+	declaracao {;}
+	| lista_declaracao declaracao {;};
 
-declaracao: declaracao_var {;}
-| declaracao_fun {;};
+declaracao:
+	declaracao_var {;}
+	| declaracao_fun {;};
 
-declaracao_var: TIPO lista_declaracao_var 
-{
-	cont_declr_tot += cont_declr_var_linha;
-	int i=0;
-	for(i=0;i<cont_declr_var_linha;i++)
+declaracao_var:
+	TIPO lista_declaracao_var 
 	{
-		Simbolo *s = (Simbolo*)vector_get(TS,cont_declr_tot - i - 1);
-		strcpy(s->tipo,$TIPO);
-		strcpy(s->kind,"var");
-		s->declarado = 1;
-		s->usado = 0;
-		s->linha = yylineno;
-	}
-	cont_declr_var_linha = 0;
-};
+		cont_declr_tot += cont_declr_var_linha;
+		int i=0;
+		for(i=0;i<cont_declr_var_linha;i++) //update variavel com seu tipo
+		{
+			Simbolo *s = (Simbolo*)vector_get(TS,cont_declr_tot - i - 1);
+			strcpy(s->tipo,$TIPO);
+		}
+		cont_declr_var_linha = 0;
+	};
 
 lista_declaracao_var: 
 	ID ';' 
 	{
-		cont_declr_var_linha++;
-		Simbolo s;
-		strcpy(s.id,$ID);
-		insereTS(s);
+		cria_Simbolo($ID,"var");
 	}
 	| ID ',' lista_declaracao_var 
 	{
-		cont_declr_var_linha++;
-		Simbolo s;
-		strcpy(s.id,$ID);
-		insereTS(s);
+		cria_Simbolo($ID,"var");
 	};
 
-declaracao_fun: ID '('')' {
-		Simbolo s;
-		strcpy(s.tipo,"undef");
-		strcpy(s.id,$ID);
-		strcpy(s.kind,"fun");
-		s.linha = yylineno;
-		s.declarado = 1;
-		s.usado = 0;
-		cont_declr_tot++;
-		insereTS(s);
+declaracao_fun:
+	ID '('')'
+	{
+		cria_Simbolo($ID,"fun");
 	} cmpst_statement{;};
 
-cmpst_statement: DEL_BLOCO_ABRE lista_statement DEL_BLOCO_FECHA{;};
+cmpst_statement:
+	DEL_BLOCO_ABRE lista_statement DEL_BLOCO_FECHA{;};
 
-lista_statement: statement {;}
-| statement lista_statement {;};
+lista_statement:
+	statement {;}
+	| statement lista_statement {;};
 
-statement: exp_statement {;} 
-| sel_statement {;}
-| rpt_statement {;}
-| print_statement {;}
-| read_statement {;}
-| cmpst_statement {;};
+statement:
+	exp_statement {;}
+	| sel_statement {;}
+	| rpt_statement {;}
+	| print_statement {;}
+	| read_statement {;}
+	| cmpst_statement {;};
 
-print_statement: PRINT '(' exp_simples ')' ';' 
-{
-	emitRO(OUT,ac,0,0);
-};
-
-read_statement: READ '(' ID ')' ';'
-{
-	insereVAR($ID);
-	emitRO(IN,ac,0,0);
-	storeVAR($ID);
-}
-
-sel_statement: IF '(' exp ')' statement %prec IFX{;} 
-| IF '(' exp ')' statement ELSE statement {;};
-
-rpt_statement: RPT '(' exp ')' statement {;};
-
-exp_statement: exp ';' {;} ;
-
-exp: ID ASSIGN exp
-{
-	do_popVAR($ID);
-}
-| exp_simples {;};
-
-exp_simples: exp_add REL exp_add {;}
-| exp_add {;};
-
-exp_add: exp_add OADD term 
-{
-	do_popExpression(need);
-	if(strcmp($OADD,"+")==0)
+print_statement:
+	PRINT '(' exp ')' ';' 
 	{
-		emitRO(ADD,ac,ac1,ac);
-	}
-	else
-	{
-		emitRO(SUB,ac,ac1,ac);
-	}
-}
-| term {;};
-
-term: term OMULT fator
-{
-	do_popExpression(need);
-	if(strcmp($OMULT,"*")==0)
-	{
-		emitRO(MUL,ac,ac1,ac);
-	}
-	else
-	{
-		emitRO(DIV,ac,ac1,ac);
-	}
-}
-| fator {;};
-
-fator: '(' exp ')' {need=1;emitRM(ST,ac,memoffset--,mp);}
-| call {;}
-| ID {loadVAR($ID);}
-| INTEIRO 
-	{
-		int num = $INTEIRO;
-		vector_add(expres,(void*)&num,sizeof(int));
+//		emitRO(OUT,ac,0,0);
+//		emitRM(LD,ac,++memoffset,mp);
 	};
 
-call: ID '('')' 
-{
-	//printf("Chamando funcao %s\n",$id);
-	int posicao = nameinTS($ID,"fun");
-	if(posicao==-1)
+read_statement:
+	READ '(' ID ')' ';'
 	{
-		Simbolo s;
-		strcpy(s.kind,"fun");
-		strcpy(s.tipo,"undef");
-		strcpy(s.id,$ID);
-		s.declarado = 0;
-		s.usado = 1;
-		s.linha = yylineno;
-		insereTS(s);
-		cont_declr_tot++;
-	}
-	else
+		marcausado_Simbolo($ID,"var");
+//		insereVAR($ID);
+//		emitRO(IN,ac,0,0);
+//		storeVAR($ID);
+	};
+
+sel_statement:
+	IF '(' exp ')' statement %prec IFX{;} 
+	| IF '(' exp ')' statement ELSE statement {;};
+
+rpt_statement:
+	RPT '(' exp ')' statement {;};
+
+exp_statement:
+	exp ';' {;};
+
+exp:
+	ID ASSIGN exp
 	{
-		Simbolo *s = vector_get(TS,posicao);
-		s->usado = 1;
+		marcausado_Simbolo($ID,"var");
+//		storeVAR($ID);
 	}
-};
+	| exp_simples {;};
+
+exp_simples:
+	exp_add REL exp_add {;}
+	| exp_add
+	{
+		//guarda o resultado da expressao num temporario
+//		emitRM(ST,ac,memoffset--,mp);
+	};
+
+exp_add:
+	exp_add OADD term
+	{
+//		do_popExpression(need);
+//		if(strcmp($OADD,"+")==0)
+//		{
+//			emitRO(ADD,ac,ac1,ac);
+//		}
+//		else
+//		{
+//			emitRO(SUB,ac,ac1,ac);
+//		}
+	}
+	| term {;};
+
+term:
+	term OMULT fator
+	{
+//		do_popExpression(need);
+//		if(strcmp($OMULT,"*")==0)
+//		{
+//			emitRO(MUL,ac,ac1,ac);
+//		}
+//		else
+//		{
+//			emitRO(DIV,ac,ac1,ac);
+//		}
+	}
+	| fator {;};
+
+fator:
+	'(' exp ')'
+	{
+		//need++;
+	}
+	| call {;}
+	| ID
+	{
+		marcausado_Simbolo($ID,"var");
+		//loadVAR($ID);
+	}
+	| INTEIRO
+	{
+//		int num = $INTEIRO;
+//		vector_add(expres,(void*)&num,sizeof(int));
+	};
+
+call:
+	ID '('')' 
+	{
+		//printf("Chamando funcao %s\n",$id);
+		marcausado_Simbolo($ID,"fun");
+	};
 %%
 extern FILE *yyin;
 int main (int argc, char *argv[]) 
 {
-	int erro;
+	int sint_erro;
 	if(argc < 2)
 	{
 		perror("Too few argc\n");
@@ -369,12 +393,19 @@ int main (int argc, char *argv[])
 	{
 		emitRM(LD,6,0,0);
 		emitRM(ST,0,0,0);
-		erro = yyparse();
-		if(!erro)
-			printf("%s\n",SINTATICAMENTE_CORRETO);
-		else
-			erros++;
+		sint_erro = yyparse();
 	}
+	report(sint_erro);
+	destroy_vector(TS);
+	destroy_vector(expres);
+	return 0;
+}
+
+void report(int sint_erro)
+{
+	int erros;
+	if(!sint_erro)
+		printf("%s\n",SINTATICAMENTE_CORRETO);
 	int i = 0;
 	for(i=0;i<TS->length;i++)
 	{
@@ -386,6 +417,11 @@ int main (int argc, char *argv[])
 		}
 		else
 		{
+			if(s->declarado>1)
+			{
+				erros++;
+				printf("[l.%d] ERROR : %s %s\n",s->linha,s->id,ERROR_2DEF);
+			}
 			if(!s->usado && strcmp(s->id,"main"))
 			{
 				printf("[l.%d] WARNING: %s %s\n",s->linha,s->id,WRNG_NUSED);
@@ -403,12 +439,10 @@ int main (int argc, char *argv[])
 	if(!erros)
 	{
 		printf("%s\n",SEMANTICAMENTE_CORRETO);
-		emitRO(HALT,0,0,0);
+		//emitRO(HALT,0,0,0);
 	}
-	destroy_vector(TS);
-	destroy_vector(expres);
-	return 0;
 }
+
 yyerror (s) /* Called by yyparse on error */
 {
 	printf ("Problema com a analise sintatica!\n");
