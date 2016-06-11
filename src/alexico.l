@@ -5,20 +5,20 @@
 %}
 %%
 
-("abre"|"{")							{return del_bloco_abre;}
-("fecha"|"}")							{return del_bloco_fecha;}
-("int")									{yylval.tipo= (char *) strdup(yytext);return tipo;}
-("while")								{return op_rpt;}
+("abre"|"{")							{return DEL_BLOCO_ABRE;}
+("fecha"|"}")							{return DEL_BLOCO_FECHA;}
+("int")									{yylval.tipo= (char *) strdup(yytext);return TIPO;}
+("while")								{return RPT;}
 ("print")								{return PRINT;}
 ("read")								{return READ;}
-("if")									{return op_if;}
-("else")								{return op_else;}
-("<-"|"=")								{yylval.operador = (char*) strdup(yytext);return op_atrib;}
-("+"|"-")								{yylval.operador = (char*) strdup(yytext);return op_add;}
-("*"|"/")								{yylval.operador = (char*) strdup(yytext);return op_mult;}
-("<"|">"|"=="|">="|"<="|"!=")			{return op_relacional;}
-[a-z]{1,8} 								{yylval.cadeia= (char *) strdup(yytext);return id;}
-[0-9]+									{yylval.inum = atoi(yytext);return inteiro;}
+("if")									{return IF;}
+("else")								{return ELSE;}
+("<-"|"=")								{yylval.operador = (char*) strdup(yytext);return ASSIGN;}
+("+"|"-")								{yylval.operador = (char*) strdup(yytext);return OADD;}
+("*"|"/")								{yylval.operador = (char*) strdup(yytext);return OMULT;}
+("<"|">"|"=="|">="|"<="|"!=")			{return REL;}
+[a-z]{1,8} 								{yylval.cadeia= (char *) strdup(yytext);return ID;}
+[0-9]+									{yylval.inum = atoi(yytext);return INTEIRO;}
 [ \n\t\r]+								{;}
 .										{return yytext[0];}
 

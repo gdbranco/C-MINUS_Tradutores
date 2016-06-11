@@ -42,6 +42,7 @@ int cont_declr_tot = 0;
 int erros = 0;
 int instruction_counter = 0;
 int memoffset = 0;
+int need = 0;
 FILE *intermediario;
 typedef struct _simbolo{
 	char id[9];
@@ -53,7 +54,7 @@ typedef struct _simbolo{
 }Simbolo;
 vector_p TS;
 vector_p expres;
-void do_popExpression();
+void do_popExpression(int need);
 void do_popVAR(char* id);
 void storeVAR(char *id);
 void loadVAR(char *id);
@@ -91,24 +92,33 @@ void do_popVAR(char* id)
 	}
 	storeVAR(id);
 }
-void do_popExpression()
+void do_popExpression(int need)
 {
-	int *i;
-	if(expres->length>1)
+	if(!need)
 	{
-		i = (int*)vector_get(expres,expres->length-1);
-		emitRM(LDC,ac,*i,0);
-		i = NULL;
-		vector_remove(expres,expres->length-1);
+		int *i;
+		if(expres->length>1)
+		{
+			i = (int*)vector_get(expres,expres->length-1);
+			emitRM(LDC,ac,*i,0);
+			i = NULL;
+			vector_remove(expres,expres->length-1);
+		}
+		emitRM(ST,ac,memoffset--,mp);
+		emitRM(LD,ac1,++memoffset,mp);
+		if(expres->length>0)
+		{
+			i = (int*)vector_get(expres,expres->length-1);
+			emitRM(LDC,ac,*i,0);
+			i=NULL;
+			vector_remove(expres,expres->length-1);
+		}
 	}
-	emitRM(ST,ac,memoffset--,mp);
-	emitRM(LD,ac1,++memoffset,mp);
-	if(expres->length>0)
+	else
 	{
-		i = (int*)vector_get(expres,expres->length-1);
-		emitRM(LDC,ac,*i,0);
-		i=NULL;
-		vector_remove(expres,expres->length-1);
+		need = 0;
+		emitRM(LD,ac,++memoffset,mp);
+		emitRM(LD,ac1,++memoffset,mp);
 	}
 }
 
@@ -172,21 +182,21 @@ char *operador;
 int inum;
 }
 
-%token <cadeia> id
-%token <inum> inteiro
+%token <cadeia> ID
+%token <inum> INTEIRO
 %token PRINT
 %token READ
-%token op_atrib
-%token <operador>op_add
-%token <operador>op_mult
-%token <operador>op_relacional
-%token op_rpt
-%token op_if
+%token ASSIGN
+%token <operador>OADD
+%token <operador>OMULT
+%token <operador>REL
+%token RPT
+%token IF
 %nonassoc IFX
-%nonassoc op_else
-%token del_bloco_abre
-%token del_bloco_fecha
-%token <tipo> tipo
+%nonassoc ELSE
+%token DEL_BLOCO_ABRE
+%token DEL_BLOCO_FECHA
+%token <tipo> TIPO
 
 %%
 /* Regras definindo a GLC e acoes correspondentes */
@@ -198,14 +208,14 @@ lista_declaracao: declaracao {;}
 declaracao: declaracao_var {;}
 | declaracao_fun {;};
 
-declaracao_var: tipo lista_declaracao_var 
+declaracao_var: TIPO lista_declaracao_var 
 {
 	cont_declr_tot += cont_declr_var_linha;
 	int i=0;
 	for(i=0;i<cont_declr_var_linha;i++)
 	{
 		Simbolo *s = (Simbolo*)vector_get(TS,cont_declr_tot - i - 1);
-		strcpy(s->tipo,$tipo);
+		strcpy(s->tipo,$TIPO);
 		strcpy(s->kind,"var");
 		s->declarado = 1;
 		s->usado = 0;
@@ -215,25 +225,25 @@ declaracao_var: tipo lista_declaracao_var
 };
 
 lista_declaracao_var: 
-	id ';' 
+	ID ';' 
 	{
 		cont_declr_var_linha++;
 		Simbolo s;
-		strcpy(s.id,$id);
+		strcpy(s.id,$ID);
 		insereTS(s);
 	}
-	| id ',' lista_declaracao_var 
+	| ID ',' lista_declaracao_var 
 	{
 		cont_declr_var_linha++;
 		Simbolo s;
-		strcpy(s.id,$id);
+		strcpy(s.id,$ID);
 		insereTS(s);
 	};
 
-declaracao_fun: id '('')' {
+declaracao_fun: ID '('')' {
 		Simbolo s;
 		strcpy(s.tipo,"undef");
-		strcpy(s.id,$id);
+		strcpy(s.id,$ID);
 		strcpy(s.kind,"fun");
 		s.linha = yylineno;
 		s.declarado = 1;
@@ -242,7 +252,7 @@ declaracao_fun: id '('')' {
 		insereTS(s);
 	} cmpst_statement{;};
 
-cmpst_statement: del_bloco_abre lista_statement del_bloco_fecha{;};
+cmpst_statement: DEL_BLOCO_ABRE lista_statement DEL_BLOCO_FECHA{;};
 
 lista_statement: statement {;}
 | statement lista_statement {;};
@@ -259,33 +269,33 @@ print_statement: PRINT '(' exp_simples ')' ';'
 	emitRO(OUT,ac,0,0);
 };
 
-read_statement: READ '(' id ')' ';'
+read_statement: READ '(' ID ')' ';'
 {
-	insereVAR($id);
+	insereVAR($ID);
 	emitRO(IN,ac,0,0);
-	storeVAR($id);
+	storeVAR($ID);
 }
 
-sel_statement: op_if '(' exp ')' statement %prec IFX{;} 
-| op_if '(' exp ')' statement op_else statement {;};
+sel_statement: IF '(' exp ')' statement %prec IFX{;} 
+| IF '(' exp ')' statement ELSE statement {;};
 
-rpt_statement: op_rpt '(' exp ')' statement {;};
+rpt_statement: RPT '(' exp ')' statement {;};
 
 exp_statement: exp ';' {;} ;
 
-exp: id op_atrib exp
+exp: ID ASSIGN exp
 {
-	do_popVAR($id);
+	do_popVAR($ID);
 }
 | exp_simples {;};
 
-exp_simples: exp_add op_relacional exp_add {;}
+exp_simples: exp_add REL exp_add {;}
 | exp_add {;};
 
-exp_add: exp_add op_add term 
+exp_add: exp_add OADD term 
 {
-	do_popExpression();
-	if(strcmp($op_add,"+")==0)
+	do_popExpression(need);
+	if(strcmp($OADD,"+")==0)
 	{
 		emitRO(ADD,ac,ac1,ac);
 	}
@@ -296,10 +306,10 @@ exp_add: exp_add op_add term
 }
 | term {;};
 
-term: term op_mult fator
+term: term OMULT fator
 {
-	do_popExpression();
-	if(strcmp($op_mult,"*")==0)
+	do_popExpression(need);
+	if(strcmp($OMULT,"*")==0)
 	{
 		emitRO(MUL,ac,ac1,ac);
 	}
@@ -310,25 +320,25 @@ term: term op_mult fator
 }
 | fator {;};
 
-fator: '(' exp ')' {;}
+fator: '(' exp ')' {need=1;emitRM(ST,ac,memoffset--,mp);}
 | call {;}
-| id {loadVAR($id);}
-| inteiro 
+| ID {loadVAR($ID);}
+| INTEIRO 
 	{
-		int num = $inteiro;
+		int num = $INTEIRO;
 		vector_add(expres,(void*)&num,sizeof(int));
 	};
 
-call: id '('')' 
+call: ID '('')' 
 {
 	//printf("Chamando funcao %s\n",$id);
-	int posicao = nameinTS($id,"fun");
+	int posicao = nameinTS($ID,"fun");
 	if(posicao==-1)
 	{
 		Simbolo s;
 		strcpy(s.kind,"fun");
 		strcpy(s.tipo,"undef");
-		strcpy(s.id,$id);
+		strcpy(s.id,$ID);
 		s.declarado = 0;
 		s.usado = 1;
 		s.linha = yylineno;
