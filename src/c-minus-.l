@@ -1,7 +1,7 @@
 %option noyywrap
 %option yylineno
 %{
-#include "asintatico.tab.h"
+#include "c-minus-.tab.h"
 %}
 %%
 
