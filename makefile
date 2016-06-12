@@ -3,7 +3,7 @@ all: main clean
 main:
 	bison -d -v src/asintatico.y
 	flex src/alexico.l
-	gcc asintatico.tab.c lex.yy.c src/vector.c src/vector.h
+	gcc asintatico.tab.c lex.yy.c src/vector.c src/vector.h -o g--
 
 clean:
 	rm -rf *.o
@@ -14,5 +14,6 @@ clean:
 	rm -rf ./src/*.gch
 	
 fclean: clean
+	rm -rf g--
 	rm -rf *.out
 	rm -rf *.output
