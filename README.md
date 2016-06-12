@@ -19,5 +19,6 @@ A linguagem tiny e tiny machine podem ser acessador por [Louden](http://www.cs.s
 
 O programa pode ser compilado a partir do comando "make". O comando "make fclean" remove o que foi criado durante a compilação.
 
-Para executar utilize o comando "g-- <input_file> [<output_file>]"
+Para executar utilize o comando "g-- \<input_file\> \[\<output_file\>\]"
+
 *<output_file> é opcional, caso não seja informado será utilizado o mesmo nome de <input_file> e extensão .tm
