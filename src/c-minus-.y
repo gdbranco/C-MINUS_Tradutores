@@ -346,25 +346,56 @@ exp:
 	| exp_simples {;};
 
 exp_simples:
-	exp_add REL exp_add 
+	exp_add REL exp_add
 	{
+		do_popExpression();
 		if(strcmp($REL,"<")==0)
 		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RM,JLT,ac,pcreg,2,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
 		}
 		else if(strcmp($REL,">")==0)
 		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RM,JGT,ac,pcreg,2,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
 		}
 		else if(strcmp($REL,"<=")==0)
 		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RM,JLE,ac,pcreg,2,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
 		}
 		else if(strcmp($REL,">=")==0)
 		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RM,JGE,ac,pcreg,2,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
 		}
 		else if(strcmp($REL,"==")==0)
 		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,2,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
 		}
 		else if(strcmp($REL,"!=")==0)
 		{
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RM,JNE,ac,pcreg,2,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
 		}
 		else
 		{
@@ -412,8 +443,7 @@ term:
 	| fator {;};
 
 fator:
-	'(' exp ')'
-	{;}
+	'(' exp ')' {;}
 	| call {;}
 	| ID 
 	{
