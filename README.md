@@ -7,6 +7,8 @@ O trabalho foi feito em trio:
 * Guilherme David Branco - 11/0012470
 * Samuel Vinicius Vieira Pala - 11/0066120
 
+Utiliza-se da biblioteca presente em [libds](https://github.com/zhemao/libds), pois o foco não esta nas estruturas de dados, mas sim na tradução e análises.
+
 A gramática de referência utilizada pode ser acessada em [C-MINUS](http://www.sierranevada.edu/snow/ExamplesX/C-Syntax.pdf).
 
 O compilador necessita de arquivos na linguagem C-MINUS-, extensão .c--, esta linguagem aceita somente variáveis globais e funções sem parâmetros(devido a finalidade de estudos).
