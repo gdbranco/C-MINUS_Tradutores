@@ -21,4 +21,4 @@ O programa pode ser compilado a partir do comando "make". O comando "make fclean
 
 Para executar utilize o comando "g-- \<input_file\> \[\<output_file\>\]"
 
-*<output_file> é opcional, caso não seja informado será utilizado o mesmo nome de <input_file> e extensão .tm
+*\<output_file\> é opcional, caso não seja informado será utilizado o mesmo nome de <input_file> e extensão .tm
