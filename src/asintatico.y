@@ -3,7 +3,6 @@
 %{
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include "src/vector.h"
 #define ERRO_UNDEF "nao declarado"
 #define WRNG_NUSED "nao usado"
@@ -300,6 +299,12 @@ statement:
 print_statement:
 	PRINT '(' exp ')' ';' 
 	{
+		if(ExpInstruction_list->length)
+		{
+			Instruction *i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
+			emitInstruction(*i);
+			vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
+		}
 		emitInstruction(cria_Instruction(RO,OUT,ac,0,0,0));
 	};
 
@@ -344,11 +349,11 @@ exp_add:
 		do_popExpression();
 		if(strcmp($OADD,"+")==0)
 		{
-			emitInstruction(cria_Instruction(RO,ADD,ac,ac1,ac,0));
+			emitInstruction(cria_Instruction(RO,ADD,ac,ac,ac1,0));
 		}
 		else
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac1,ac,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
 		}
 		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1); //Instrucao LD que deve ser inserida
 		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
@@ -363,11 +368,11 @@ term:
 		do_popExpression();
 		if(strcmp($OMULT,"*")==0)
 		{
-			emitInstruction(cria_Instruction(RO,MUL,ac,ac1,ac,0));
+			emitInstruction(cria_Instruction(RO,MUL,ac,ac,ac1,0));
 		}
 		else
 		{
-			emitInstruction(cria_Instruction(RO,DIV,ac,ac1,ac,0));
+			emitInstruction(cria_Instruction(RO,DIV,ac,ac,ac1,0));
 		}
 		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1); //Instrucao LD que deve ser inserida
 		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
