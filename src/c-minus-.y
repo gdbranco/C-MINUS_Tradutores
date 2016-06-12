@@ -82,6 +82,7 @@ void do_popExpression();
 void storeVAR(char *id);
 void loadVAR(char *id);
 void emitInstruction(Instruction inst);
+void emitComment(char *com);
 //TABELA DE SIMBOLOS MANAGER
 void insereTS(Simbolo s);
 int busca_Simbolo(char *name, char *kind);
@@ -89,6 +90,11 @@ int busca_Simbolo(char *name, char *kind);
 void report(int sint_erro);
 //
 //
+
+void emitComment(char *com)
+{
+	fprintf(intermediario,"* %s\n", com);
+}
 void emitInstruction(Instruction inst)
 {
 	switch(inst.kind)
@@ -340,7 +346,31 @@ exp:
 	| exp_simples {;};
 
 exp_simples:
-	exp_add REL exp_add {;}
+	exp_add REL exp_add 
+	{
+		if(strcmp($REL,"<")==0)
+		{
+		}
+		else if(strcmp($REL,">")==0)
+		{
+		}
+		else if(strcmp($REL,"<=")==0)
+		{
+		}
+		else if(strcmp($REL,">=")==0)
+		{
+		}
+		else if(strcmp($REL,"==")==0)
+		{
+		}
+		else if(strcmp($REL,"!=")==0)
+		{
+		}
+		else
+		{
+			emitComment("Undefined Expression");
+		}
+	}
 	| exp_add {;};
 
 exp_add:
