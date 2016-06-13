@@ -323,7 +323,7 @@ read_statement:
 	};
 
 sel_statement:
-	IF '(' exp ')'{emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,1,0);} statement %prec IFX{;}
+	IF '(' exp ')' statement %prec IFX{;}
 	| IF '(' exp ')' statement ELSE statement {;};
 
 rpt_statement:
