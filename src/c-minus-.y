@@ -47,6 +47,7 @@ int instruction_counter = 0;
 int memoffset = 0;
 vector_p TS;
 vector_p ExpInstruction_list;
+vector_p Location_stack;
 FILE *intermediario;
 typedef struct _instruction{
 	char op[5];
@@ -83,6 +84,8 @@ void storeVAR(char *id);
 void loadVAR(char *id);
 void emitInstruction(Instruction inst);
 void emitComment(char *com);
+void emitBackup();
+int emitRestore();
 //TABELA DE SIMBOLOS MANAGER
 void insereTS(Simbolo s);
 int busca_Simbolo(char *name, char *kind);
@@ -90,6 +93,17 @@ int busca_Simbolo(char *name, char *kind);
 void report(int sint_erro);
 //
 //
+void emitBackup()
+{
+	vector_add(Location_stack,(void*)&instruction_counter,sizeof(int));
+}
+
+int emitRestore()
+{
+	int *i;
+	i = (int*)vector_get(Location_stack,Location_stack->length-1);
+	return *i;
+}
 
 void emitComment(char *com)
 {
@@ -324,15 +338,28 @@ read_statement:
 	};
 
 sel_statement:
-	IF '(' exp ')' {backup_counter();} statement
+	IF '(' exp ')'{emitBackup();instruction_counter++;} statement
 	{
-		emitComment("Preciso descobrir quantos pular");
-		restore_counter();
-		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,instruction_counter-savedloc,0));
-	}
+		int i = instruction_counter;
+		instruction_counter = emitRestore();
+		vector_remove(Location_stack,Location_stack->length-1);
+		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,0));
+		instruction_counter = i;
+	};
 	//IF '(' exp ')' statement {emitComment("Deveria pular para ca");}ELSE statement {;};
 rpt_statement:
-	RPT '(' exp ')' statement {;};
+	RPT {emitBackup();}'(' exp ')'{emitBackup();instruction_counter++;} statement 
+	{
+			int i = instruction_counter;
+			instruction_counter = emitRestore();
+			vector_remove(Location_stack,Location_stack->length-1);
+			emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,0));
+			instruction_counter = i;
+			int aux;
+			aux = emitRestore();
+			vector_remove(Location_stack,Location_stack->length-1);			
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,aux-instruction_counter-1,0));
+	};
 
 exp_statement:
 	exp ';'{;};
@@ -478,6 +505,7 @@ int main (int argc, char *argv[])
 	}
 	TS = create_vector();
 	ExpInstruction_list = create_vector();
+	Location_stack = create_vector();
 	yyin = fopen(argv[1],"r");
 	intermediario = fopen("a.tm","w");
 	if(yyin)
@@ -489,6 +517,7 @@ int main (int argc, char *argv[])
 	report(sint_erro);
 	destroy_vector(TS);
 	destroy_vector(ExpInstruction_list);
+	destroy_vector(Location_stack);
 	return 0;
 }
 

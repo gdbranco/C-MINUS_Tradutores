@@ -1,7 +1,15 @@
-int a,b;
+int x,fat;
 main ()
-{	
-	a = 1;
-	b = 2;
-	print(a);
+{
+	read(x);
+	if( 0 < x)
+	{
+		fat = 1;
+		while(x != 0)
+		{
+			fat = fat * x;
+			x= x-1;
+		}
+		print(fat);
+	}
 }
