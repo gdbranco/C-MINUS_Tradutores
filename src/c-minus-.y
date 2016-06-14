@@ -41,6 +41,8 @@
 #define mp 6
 #define pcreg 7
 extern yylineno;
+extern FILE *yyin;
+extern FILE *yyout;
 int cont_declr_var_linha = 0;
 int cont_declr_tot = 0;
 int instruction_counter = 0;
@@ -48,7 +50,6 @@ int memoffset = 0;
 vector_p TS;
 vector_p ExpInstruction_list;
 vector_p Location_stack;
-FILE *intermediario;
 typedef struct _instruction{
 	char op[5];
 	int kind;
@@ -107,7 +108,7 @@ int emitRestore()
 
 void emitComment(char *com)
 {
-	fprintf(intermediario,"* %s\n", com);
+	fprintf(yyout,"* %s\n", com);
 }
 void emitInstruction(Instruction inst)
 {
@@ -116,10 +117,10 @@ void emitInstruction(Instruction inst)
 		default:
 			break;
 		case RO:
-			fprintf(intermediario,"%3d: %5s %d,%d,%d\n",instruction_counter++,inst.op,inst.r,inst.s,inst.t);
+			fprintf(yyout,"%3d: %5s %d,%d,%d\n",instruction_counter++,inst.op,inst.r,inst.s,inst.t);
 			break;
 		case RM:
-			fprintf(intermediario,"%3d: %5s %d,%d(%d)\n",instruction_counter++,inst.op,inst.r,inst.t,inst.s);
+			fprintf(yyout,"%3d: %5s %d,%d(%d)\n",instruction_counter++,inst.op,inst.r,inst.t,inst.s);
 			break;
 	}
 }
@@ -247,7 +248,7 @@ int inum;
 %token <inum> INTEIRO
 %token PRINT
 %token READ
-%token ASSIGN
+%token <operador>ASSIGN
 %token <operador>OADD
 %token <operador>OMULT
 %token <operador>REL
@@ -284,22 +285,26 @@ declaracao_var:
 			strcpy(s->tipo,$TIPO);
 		}
 		cont_declr_var_linha = 0;
+		free($TIPO);
 	};
 
 lista_declaracao_var: 
 	ID ';' 
 	{
 		cria_Simbolo($ID,"var");
+		free($ID);
 	}
 	| ID ',' lista_declaracao_var 
 	{
 		cria_Simbolo($ID,"var");
+		free($ID);
 	};
 
 declaracao_fun:
 	ID '('')'
 	{
 		cria_Simbolo($ID,"fun");
+		free($ID);
 	} cmpst_statement{;};
 
 cmpst_statement:
@@ -335,6 +340,7 @@ read_statement:
 		marcausado_Simbolo($ID,"var");
 		emitInstruction(cria_Instruction(RO,IN,ac,0,0,0));
 		storeVAR($ID);
+		free($ID);
 	};
 
 sel_statement:
@@ -374,6 +380,8 @@ exp:
 			vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 		}
 		storeVAR($ID);
+		free($ID);
+		free($ASSIGN);
 	}
 	| exp_simples {;};
 
@@ -433,6 +441,7 @@ exp_simples:
 		{
 			emitComment("Undefined Expression");
 		}
+		free($REL);
 	}
 	| exp_add {;};
 
@@ -452,6 +461,7 @@ exp_add:
 		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
 		memoffset--;
 		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
+		free($OADD);
 	}
 	| term {;};
 
@@ -471,6 +481,7 @@ term:
 		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
 		memoffset--;
 		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
+		free($OMULT);
 	}
 	| fator {;};
 
@@ -481,6 +492,7 @@ fator:
 	{
 		marcausado_Simbolo($ID,"var");
 		loadVAR($ID);
+		free($ID);
 	}
 	| INTEIRO
 	{
@@ -492,29 +504,54 @@ call:
 	ID '('')'
 	{
 		marcausado_Simbolo($ID,"fun");
+		free($ID);
 	};
 %%
-extern FILE *yyin;
 int main (int argc, char *argv[]) 
 {
 	int sint_erro;
 	if(argc < 2)
 	{
-		perror("Too few argc\n");
+		perror("Uso: ./g-- <input_file> [<output_file>]\n");
 		return -1;
 	}
 	TS = create_vector();
 	ExpInstruction_list = create_vector();
 	Location_stack = create_vector();
-	yyin = fopen(argv[1],"r");
-	intermediario = fopen("a.tm","w");
+	char infile_name[100];
+	char outfile_name[100];
+	strcpy(infile_name,argv[1]);
+	char *pch = strrchr(infile_name,'/');
+	if(pch == NULL) strcpy(outfile_name,infile_name);
+	else strcpy(outfile_name,pch+1);
+	pch = strrchr(infile_name,'.');
+	if(pch == NULL)	{strcat(infile_name,".c--");}
+	else 
+	{
+		char aux[100] = "";
+		strncpy(aux,outfile_name,strlen(outfile_name) - strlen(pch));
+		strcpy(outfile_name,aux);
+	}
+	strcat(outfile_name,".tm");
+	yyin = fopen(infile_name,"r");
 	if(yyin)
 	{
+		if(argc < 3)
+			yyout = fopen(outfile_name,"w");
+		else
+			yyout = fopen(argv[2],"w");
 		emitInstruction(cria_Instruction(RM,LD,6,0,0,0));
 		emitInstruction(cria_Instruction(RM,ST,0,0,0,0));
 		sint_erro = yyparse();
+		report(sint_erro);
 	}
-	report(sint_erro);
+	else
+	{
+		printf("Arquivo ""%s"" não existe\n",infile_name);
+		return -1;
+	}
+	fclose(yyin);
+	fclose(yyout);
 	destroy_vector(TS);
 	destroy_vector(ExpInstruction_list);
 	destroy_vector(Location_stack);
