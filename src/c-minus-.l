@@ -16,7 +16,7 @@
 ("<-"|"=")								{yylval.operador = (char*) strdup(yytext);return ASSIGN;}
 ("+"|"-")								{yylval.operador = (char*) strdup(yytext);return OADD;}
 ("*"|"/")								{yylval.operador = (char*) strdup(yytext);return OMULT;}
-("<"|">"|"=="|">="|"<="|"!=")			{yylval.operador = (char*) strdup(yytext);return REL;}
+("<"|">"|"=="|">="|"<="|"!="|"&&"|"||")	{yylval.operador = (char*) strdup(yytext);return REL;}
 [a-z]{1,8} 								{yylval.cadeia= (char *) strdup(yytext);return ID;}
 [0-9]+									{yylval.inum = atoi(yytext);return INTEIRO;}
 [ \n\t\r]+								{;}

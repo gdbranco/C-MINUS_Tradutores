@@ -239,7 +239,8 @@ int inum;
 %token <operador>REL
 %token RPT
 %token IF
-%nonassoc IFX
+%token ELSE
+%nonassoc THEN
 %nonassoc ELSE
 %token DEL_BLOCO_ABRE
 %token DEL_BLOCO_FECHA
@@ -323,9 +324,13 @@ read_statement:
 	};
 
 sel_statement:
-	IF '(' exp ')' statement %prec IFX{;}
-	| IF '(' exp ')' statement ELSE statement {;};
-
+	IF '(' exp ')' {backup_counter();} statement
+	{
+		emitComment("Preciso descobrir quantos pular");
+		restore_counter();
+		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,instruction_counter-savedloc,0));
+	}
+	//IF '(' exp ')' statement {emitComment("Deveria pular para ca");}ELSE statement {;};
 rpt_statement:
 	RPT '(' exp ')' statement {;};
 
