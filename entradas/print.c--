@@ -2,7 +2,7 @@ int x,fat;
 main ()
 {
 	read(x);
-	if( 0 < x)
+	if( 0 < x )
 	{
 		fat = 1;
 		while(x != 0)

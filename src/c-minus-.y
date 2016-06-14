@@ -4,12 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 #include "src/vector.h"
+//MENSAGENS DA ANALISE
 #define ERRO_UNDEF "nao declarado"
 #define WRNG_NUSED "nao usado"
 #define ERROR_2DEF "declarado mais de uma vez"
+#define ERROR_SINTATICO "Problema com analise sintatica"
 
 #define SINTATICAMENTE_CORRETO "O programa esta sintaticamente correto"
 #define SEMANTICAMENTE_CORRETO "O programa esta semanticamento correto"
+//DEFINICOES DA ANALISE
+#define TRUE 1
+#define FALSE 0
+#define REPORT FALSE
 //INSTRUCTIONS TYPE
 #define RO 0
 #define RM 1
@@ -34,12 +40,13 @@
 #define JGT "JGT"
 #define JEQ "JEQ"
 #define JNE "JNE"
-
+//TINY MACHINE REGISTERS
 #define ac 0
 #define ac1 1
 #define gp 5
 #define mp 6
 #define pcreg 7
+int erros = 0;
 extern yylineno;
 extern FILE *yyin;
 extern FILE *yyout;
@@ -130,7 +137,7 @@ void storeVAR(char *id)
 	if(posicao!=-1)
 	{
 		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-		Instruction i = cria_Instruction(RM,ST,ac,gp,posicao,0);
+		Instruction i = cria_Instruction(RM,ST,ac,gp,posicao,FALSE);
 		emitInstruction(i);
 	}
 }
@@ -149,8 +156,8 @@ void do_popExpression()
 		i = NULL;
 		vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 	}
-	emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset--,0));
-	emitInstruction(cria_Instruction(RM,LD,ac1,mp,++memoffset,0));
+	emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset--,FALSE));
+	emitInstruction(cria_Instruction(RM,LD,ac1,mp,++memoffset,FALSE));
 	if(ExpInstruction_list->length>0)
 	{
 		i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
@@ -166,7 +173,7 @@ void loadVAR(char* id)
 {
 	int posicao = busca_Simbolo(id,"var");
 	Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-	Instruction inst = cria_Instruction(RM,LD,ac,gp,posicao,0);
+	Instruction inst = cria_Instruction(RM,LD,ac,gp,posicao,FALSE);
 	vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 }
 
@@ -188,8 +195,8 @@ void cria_Simbolo(char * id,char *kind)
 		strcpy(s.tipo,"undef");
 		strcpy(s.id,id);
 		strcpy(s.kind,kind);
-		s.declarado = 1;
-		s.usado = 0;
+		s.declarado = TRUE;
+		s.usado = FALSE;
 		s.linha = yylineno;
 		insereTS(s);
 	}
@@ -209,8 +216,8 @@ void marcausado_Simbolo(char* id, char *kind)
 		strcpy(s.id,id);
 		strcpy(s.kind,kind);
 		strcpy(s.tipo,"undef");
-		s.declarado = 0;
-		s.usado = 1;
+		s.declarado = FALSE;
+		s.usado = TRUE;
 		s.linha = yylineno;
 		cont_declr_tot++;
 		insereTS(s);
@@ -331,14 +338,14 @@ print_statement:
 			emitInstruction(*i);
 			vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 		}
-		emitInstruction(cria_Instruction(RO,OUT,ac,0,0,0));
+		emitInstruction(cria_Instruction(RO,OUT,ac,0,0,FALSE));
 	};
 
 read_statement:
 	READ '(' ID ')' ';'
 	{
 		marcausado_Simbolo($ID,"var");
-		emitInstruction(cria_Instruction(RO,IN,ac,0,0,0));
+		emitInstruction(cria_Instruction(RO,IN,ac,0,0,FALSE));
 		storeVAR($ID);
 		free($ID);
 	};
@@ -349,7 +356,7 @@ sel_statement:
 		int i = instruction_counter;
 		instruction_counter = emitRestore();
 		vector_remove(Location_stack,Location_stack->length-1);
-		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,0));
+		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,FALSE));
 		instruction_counter = i;
 	};
 	//IF '(' exp ')' statement {emitComment("Deveria pular para ca");}ELSE statement {;};
@@ -359,12 +366,12 @@ rpt_statement:
 			int i = instruction_counter;
 			instruction_counter = emitRestore();
 			vector_remove(Location_stack,Location_stack->length-1);
-			emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,0));
+			emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,FALSE));
 			instruction_counter = i;
 			int aux;
 			aux = emitRestore();
 			vector_remove(Location_stack,Location_stack->length-1);			
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,aux-instruction_counter-1,0));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,aux-instruction_counter-1,FALSE));
 	};
 
 exp_statement:
@@ -391,51 +398,51 @@ exp_simples:
 		do_popExpression();
 		if(strcmp($REL,"<")==0)
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
-			emitInstruction(cria_Instruction(RM,JLT,ac,pcreg,2,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JLT,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
 		else if(strcmp($REL,">")==0)
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
-			emitInstruction(cria_Instruction(RM,JGT,ac,pcreg,2,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JGT,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
 		else if(strcmp($REL,"<=")==0)
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
-			emitInstruction(cria_Instruction(RM,JLE,ac,pcreg,2,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JLE,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
 		else if(strcmp($REL,">=")==0)
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
-			emitInstruction(cria_Instruction(RM,JGE,ac,pcreg,2,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JGE,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
 		else if(strcmp($REL,"==")==0)
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
-			emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,2,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
 		else if(strcmp($REL,"!=")==0)
 		{
-			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
-			emitInstruction(cria_Instruction(RM,JNE,ac,pcreg,2,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,0));
-			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,0));
-			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,0));
+			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JNE,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
 		else
 		{
@@ -451,14 +458,14 @@ exp_add:
 		do_popExpression();
 		if(strcmp($OADD,"+")==0)
 		{
-			emitInstruction(cria_Instruction(RO,ADD,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RO,ADD,ac,ac,ac1,FALSE));
 		}
 		else
 		{
 			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
 		}
-		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1); //Instrucao LD que deve ser inserida
-		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
+		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
 		memoffset--;
 		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		free($OADD);
@@ -471,14 +478,14 @@ term:
 		do_popExpression();
 		if(strcmp($OMULT,"*")==0)
 		{
-			emitInstruction(cria_Instruction(RO,MUL,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RO,MUL,ac,ac,ac1,FALSE));
 		}
 		else
 		{
-			emitInstruction(cria_Instruction(RO,DIV,ac,ac,ac1,0));
+			emitInstruction(cria_Instruction(RO,DIV,ac,ac,ac1,FALSE));
 		}
-		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,1); //Instrucao LD que deve ser inserida
-		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,0));
+		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
 		memoffset--;
 		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		free($OMULT);
@@ -496,7 +503,7 @@ fator:
 	}
 	| INTEIRO
 	{
-		Instruction inst = cria_Instruction(RM,LDC,ac,0,$INTEIRO,0);
+		Instruction inst = cria_Instruction(RM,LDC,ac,0,$INTEIRO,FALSE);
 		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 	};
 
@@ -540,8 +547,8 @@ int main (int argc, char *argv[])
 			yyout = fopen(outfile_name,"w");
 		else
 			yyout = fopen(argv[2],"w");
-		emitInstruction(cria_Instruction(RM,LD,6,0,0,0));
-		emitInstruction(cria_Instruction(RM,ST,0,0,0,0));
+		emitInstruction(cria_Instruction(RM,LD,6,0,0,FALSE));
+		emitInstruction(cria_Instruction(RM,ST,0,0,0,FALSE));
 		sint_erro = yyparse();
 		report(sint_erro);
 	}
@@ -560,9 +567,6 @@ int main (int argc, char *argv[])
 
 void report(int sint_erro)
 {
-	int erros = 0;
-	if(!sint_erro)
-		printf("%s\n",SINTATICAMENTE_CORRETO);
 	int i = 0;
 	for(i=0;i<TS->length;i++)
 	{
@@ -586,21 +590,27 @@ void report(int sint_erro)
 		}
 	}
 	
-	printf("----REPORT SEMANTICO----\nPrograma com %d linhas\nHouveram %d declaracoes\nHouveram %d erros\n",yylineno-1,cont_declr_tot,erros);
-	printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tLINHA\n");
-	for(i=0;i<TS->length;i++)
+	if(REPORT)
 	{
-		Simbolo *s = (Simbolo*)vector_get(TS,i);
-		printf("%s\t%s\t%s\t%d\t\t%d\t%d\n",s->kind,s->tipo,s->id,s->declarado,s->usado,s->linha);
-	}
-	if(!erros)
-	{
-		printf("%s\n",SEMANTICAMENTE_CORRETO);
-		emitInstruction(cria_Instruction(RO,HALT,0,0,0,0));
+		printf("----REPORT SEMANTICO----\nPrograma com %d linhas\nHouve %d declr. \nHouve %d erro(s)\n",yylineno-1,cont_declr_tot,erros);
+		printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tLINHA\n");
+		for(i=0;i<TS->length;i++)
+		{
+			Simbolo *s = (Simbolo*)vector_get(TS,i);
+			printf("%s\t%s\t%s\t%d\t\t%d\t%d\n",s->kind,s->tipo,s->id,s->declarado,s->usado,s->linha);
+		}
+		if(!erros)
+		{
+			if(!sint_erro)
+				printf("%s\n",SINTATICAMENTE_CORRETO);
+			printf("%s\n",SEMANTICAMENTE_CORRETO);
+			emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
+		}
 	}
 }
 
 yyerror (s) /* Called by yyparse on error */
 {
-	printf ("Problema com a analise sintatica!\n");
+	erros++;
+	printf ("[l.%d] ERROR : %s\n",yylineno,ERROR_SINTATICO);
 }
