@@ -16,6 +16,7 @@
 #define TRUE 1
 #define FALSE 0
 #define REPORT FALSE
+#define REPORT_TM TRUE
 //INSTRUCTIONS TYPE
 #define RO 0
 #define RM 1
@@ -271,7 +272,7 @@ int inum;
 %%
 /* Regras definindo a GLC e acoes correspondentes */
 programa:
-	lista_declaracao {;};
+	{if(REPORT_TM) emitComment("START PROGRAM");} lista_declaracao {;};
 
 lista_declaracao:
 	declaracao {;}
@@ -446,7 +447,7 @@ exp_simples:
 		}
 		else
 		{
-			emitComment("Undefined Expression");
+			if(REPORT_TM) emitComment("Undefined Expression");
 		}
 		free($REL);
 	}
@@ -547,10 +548,13 @@ int main (int argc, char *argv[])
 			yyout = fopen(outfile_name,"w");
 		else
 			yyout = fopen(argv[2],"w");
+		if(REPORT_TM) emitComment("PRELUDIO");
 		emitInstruction(cria_Instruction(RM,LD,6,0,0,FALSE));
 		emitInstruction(cria_Instruction(RM,ST,0,0,0,FALSE));
 		sint_erro = yyparse();
 		report(sint_erro);
+		if(REPORT_TM) emitComment("STOP");		
+		emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
 	}
 	else
 	{
@@ -604,7 +608,6 @@ void report(int sint_erro)
 			if(!sint_erro)
 				printf("%s\n",SINTATICAMENTE_CORRETO);
 			printf("%s\n",SEMANTICAMENTE_CORRETO);
-			emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
 		}
 	}
 }
