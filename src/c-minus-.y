@@ -15,7 +15,7 @@
 //DEFINICOES DA ANALISE
 #define TRUE 1
 #define FALSE 0
-#define REPORT FALSE
+#define REPORT TRUE
 #define REPORT_TM TRUE
 //INSTRUCTIONS TYPE
 #define RO 0
@@ -357,10 +357,10 @@ sel_statement:
 		int i = instruction_counter;
 		instruction_counter = emitRestore();
 		vector_remove(Location_stack,Location_stack->length-1);
-		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,FALSE));
+		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
 		instruction_counter = i;
 	};
-	//IF '(' exp ')' statement {emitComment("Deveria pular para ca");}ELSE statement {;};
+	//IF '(' exp ') statement {emitComment("Deveria pular para ca");}ELSE statement {;};
 rpt_statement:
 	RPT {emitBackup();}'(' exp ')'{emitBackup();instruction_counter++;} statement 
 	{
@@ -371,7 +371,7 @@ rpt_statement:
 			instruction_counter = i;
 			int aux;
 			aux = emitRestore();
-			vector_remove(Location_stack,Location_stack->length-1);			
+			vector_remove(Location_stack,Location_stack->length-1);
 			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,aux-instruction_counter-1,FALSE));
 	};
 
@@ -381,7 +381,7 @@ exp_statement:
 exp:
 	ID {marcausado_Simbolo($ID,"var");} ASSIGN exp
 	{
-		if(ExpInstruction_list->length==1)
+		if(ExpInstruction_list->length>=1)
 		{
 			Instruction *i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
 			emitInstruction(*i);
@@ -445,10 +445,30 @@ exp_simples:
 			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
 			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		}
+		else if(strcmp($REL,"&&")==0)
+		{
+			emitInstruction(cria_Instruction(RO,MUL,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JNE,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
+		}
+		else if(strcmp($REL,"||")==0)
+		{
+			emitInstruction(cria_Instruction(RO,ADD,ac,ac,ac1,FALSE));
+			emitInstruction(cria_Instruction(RM,JNE,ac,pcreg,2,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,0,FALSE));
+			emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
+			emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
+		}
 		else
 		{
 			if(REPORT_TM) emitComment("Undefined Expression");
 		}
+		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
+		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
+		memoffset--;
+		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		free($REL);
 	}
 	| exp_add {;};
@@ -553,7 +573,7 @@ int main (int argc, char *argv[])
 		emitInstruction(cria_Instruction(RM,ST,0,0,0,FALSE));
 		sint_erro = yyparse();
 		report(sint_erro);
-		if(REPORT_TM) emitComment("STOP");		
+		if(REPORT_TM) emitComment("STOP");
 		emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
 	}
 	else
@@ -597,6 +617,8 @@ void report(int sint_erro)
 	if(REPORT)
 	{
 		printf("----REPORT SEMANTICO----\nPrograma com %d linhas\nHouve %d declr. \nHouve %d erro(s)\n",yylineno-1,cont_declr_tot,erros);
+		printf("N instrucoes : %d\n",instruction_counter+1);
+		printf("N memoffset : %d\n",memoffset);
 		printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tLINHA\n");
 		for(i=0;i<TS->length;i++)
 		{
