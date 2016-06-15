@@ -262,8 +262,6 @@ int inum;
 %token RPT
 %token IF
 %token ELSE
-%nonassoc THEN
-%nonassoc ELSE
 %token DEL_BLOCO_ABRE
 %token DEL_BLOCO_FECHA
 %token <tipo> TIPO
@@ -351,27 +349,30 @@ read_statement:
 	};
 
 sel_statement:
-	IF '(' exp ')'{emitBackup();instruction_counter++;} statement %prec THEN
+	/*IF '(' exp ')'{emitBackup();instruction_counter++;} statement
 	{
 		int i = instruction_counter;
 		instruction_counter = emitRestore();
 		vector_remove(Location_stack,Location_stack->length-1);
 		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
+		instruction_counter = i;
+	}
+	|*/ IF '(' exp ')'{emitBackup();instruction_counter++;} statement
+	{
+		int i = instruction_counter;
+		instruction_counter = emitRestore();
+		vector_remove(Location_stack,Location_stack->length-1);
+		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter,FALSE));
+		instruction_counter = i;
+	}
+	ELSE {emitBackup();instruction_counter++;} statement
+	{
+		int i = instruction_counter;
+		instruction_counter = emitRestore();
+		vector_remove(Location_stack,Location_stack->length-1);
+		emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,i - instruction_counter - 1,FALSE));
 		instruction_counter = i;
 	};
-	/*|IF '(' exp ')'
-	{
-		emitBackup();instruction_counter++;
-	}
-	statement
-	{
-		int i = instruction_counter;
-		instruction_counter = emitRestore();
-		vector_remove(Location_stack,Location_stack->length-1);
-		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
-		instruction_counter = i;
-	}
-	ELSE statement {;};*/
 rpt_statement:
 	RPT {emitBackup();}'(' exp ')'{emitBackup();instruction_counter++;} statement 
 	{
@@ -387,7 +388,8 @@ rpt_statement:
 	};
 
 exp_statement:
-	exp ';'{;};
+	exp ';'{;}
+	| ';' {;};
 
 exp:
 	ID {marcausado_Simbolo($ID,"var");} ASSIGN exp

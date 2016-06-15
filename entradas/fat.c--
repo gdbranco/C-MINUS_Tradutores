@@ -13,4 +13,5 @@ main ()
 		}
 		print(fat);
 	}
+	else {;}
 }
