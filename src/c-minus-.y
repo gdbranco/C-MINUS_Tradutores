@@ -4,17 +4,16 @@
 #include <stdio.h>
 #include <string.h>
 #include "src/vector.h"
-//MENSAGENS DA ANALISE
+
+#define TRUE 1
+#define FALSE 0
+//DEFINICOES DA ANALISE
 #define ERRO_UNDEF "nao declarado"
 #define WRNG_NUSED "nao usado"
 #define ERROR_2DEF "declarado mais de uma vez"
 #define ERROR_SINTATICO "Problema com analise sintatica"
-
 #define SINTATICAMENTE_CORRETO "O programa esta sintaticamente correto"
 #define SEMANTICAMENTE_CORRETO "O programa esta semanticamento correto"
-//DEFINICOES DA ANALISE
-#define TRUE 1
-#define FALSE 0
 #define REPORT TRUE
 #define REPORT_TM TRUE
 //INSTRUCTIONS TYPE
@@ -352,7 +351,7 @@ read_statement:
 	};
 
 sel_statement:
-	IF '(' exp ')'{emitBackup();instruction_counter++;} statement
+	IF '(' exp ')'{emitBackup();instruction_counter++;} statement %prec THEN
 	{
 		int i = instruction_counter;
 		instruction_counter = emitRestore();
@@ -360,7 +359,19 @@ sel_statement:
 		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
 		instruction_counter = i;
 	};
-	//IF '(' exp ') statement {emitComment("Deveria pular para ca");}ELSE statement {;};
+	/*|IF '(' exp ')'
+	{
+		emitBackup();instruction_counter++;
+	}
+	statement
+	{
+		int i = instruction_counter;
+		instruction_counter = emitRestore();
+		vector_remove(Location_stack,Location_stack->length-1);
+		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
+		instruction_counter = i;
+	}
+	ELSE statement {;};*/
 rpt_statement:
 	RPT {emitBackup();}'(' exp ')'{emitBackup();instruction_counter++;} statement 
 	{

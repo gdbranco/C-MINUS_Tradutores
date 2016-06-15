@@ -19,6 +19,7 @@
 ("<"|">"|"=="|">="|"<="|"!="|"&&"|"||")	{yylval.operador = (char*) strdup(yytext);return REL;}
 [a-z]{1,8} 								{yylval.cadeia= (char *) strdup(yytext);return ID;}
 [0-9]+									{yylval.inum = atoi(yytext);return INTEIRO;}
+"/*"(.|\n)*"*/"							{;}
 [ \n\t\r]+								{;}
 .										{return yytext[0];}
 
