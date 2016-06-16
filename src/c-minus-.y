@@ -160,7 +160,7 @@ void storeVAR(char *id)
 	}
 }
 
-// Checa na pilha se precisa pegar algum valor que esta
+// Checa na pilha se precisa pegar algum valor
 void do_popExpression()
 {
 	Instruction *i;
