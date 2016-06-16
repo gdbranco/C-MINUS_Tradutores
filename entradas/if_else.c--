@@ -1,3 +1,4 @@
+/**/
 int a,b;
 main()
 {
@@ -10,5 +11,9 @@ main()
 	else
 	{
 		print(b);
+	}
+	if( a == 1) then
+	{
+		print(30);
 	}
 }

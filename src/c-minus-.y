@@ -1,5 +1,5 @@
 /* Verificando a sintaxe de programas segundo nossa GLC-exemplo */
-/* considerando notacao polonesa para expressoes */
+
 %{
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +7,7 @@
 
 #define TRUE 1
 #define FALSE 0
+
 //DEFINICOES DA ANALISE
 #define ERRO_UNDEF "nao declarado"
 #define WRNG_NUSED "nao usado"
@@ -16,9 +17,11 @@
 #define SEMANTICAMENTE_CORRETO "O programa esta semanticamento correto"
 #define REPORT TRUE
 #define REPORT_TM TRUE
+
 //INSTRUCTIONS TYPE
 #define RO 0
 #define RM 1
+
 //RO INSTRUCTIONS
 //RO r,s,t
 #define HALT "HALT"
@@ -28,6 +31,7 @@
 #define SUB "SUB"
 #define MUL "MUL"
 #define DIV "DIV"
+
 //RM INSTRUCTIONS
 //RM r,d(s)
 #define LD "LD"
@@ -40,23 +44,28 @@
 #define JGT "JGT"
 #define JEQ "JEQ"
 #define JNE "JNE"
+
 //TINY MACHINE REGISTERS
 #define ac 0
 #define ac1 1
 #define gp 5
 #define mp 6
 #define pcreg 7
+
 int erros = 0;
-extern yylineno;
-extern FILE *yyin;
-extern FILE *yyout;
 int cont_declr_var_linha = 0;
 int cont_declr_tot = 0;
 int instruction_counter = 0;
 int memoffset = 0;
+
+extern yylineno;
+extern FILE *yyin;
+extern FILE *yyout;
+
 vector_p TS;
 vector_p ExpInstruction_list;
 vector_p Location_stack;
+
 typedef struct _instruction{
 	char op[5];
 	int kind;
@@ -65,7 +74,9 @@ typedef struct _instruction{
 	int t;
 	int hasP;
 }Instruction;
+
 Instruction cria_Instruction(int kind,char *op , int r, int s, int t, int hasP);
+
 Instruction cria_Instruction(int kind, char *op, int r, int s, int t, int hasP)
 {
 	Instruction i;
@@ -77,6 +88,7 @@ Instruction cria_Instruction(int kind, char *op, int r, int s, int t, int hasP)
 	i.hasP = hasP;
 	return i;
 }
+
 typedef struct _simbolo{
 	char id[9];
 	char tipo[6];
@@ -85,7 +97,9 @@ typedef struct _simbolo{
 	char kind[6];
 	int linha;
 }Simbolo;
+
 void cria_Simbolo(char* id,char* kind);
+
 //CRIACAO DE CODIGO
 void do_popExpression();
 void storeVAR(char *id);
@@ -94,18 +108,21 @@ void emitInstruction(Instruction inst);
 void emitComment(char *com);
 void emitBackup();
 int emitRestore();
+
 //TABELA DE SIMBOLOS MANAGER
 void insereTS(Simbolo s);
 int busca_Simbolo(char *name, char *kind);
+
 //REPORTS
 void report(int sint_erro);
 //
-//
+// Guarda posicao do pc reg
 void emitBackup()
 {
 	vector_add(Location_stack,(void*)&instruction_counter,sizeof(int));
 }
 
+// Libera posicao pc reg
 int emitRestore()
 {
 	int *i;
@@ -131,6 +148,7 @@ void emitInstruction(Instruction inst)
 			break;
 	}
 }
+
 void storeVAR(char *id)
 {
 	int posicao = busca_Simbolo(id,"var");
@@ -142,6 +160,7 @@ void storeVAR(char *id)
 	}
 }
 
+// Checa na pilha se precisa pegar algum valor que esta
 void do_popExpression()
 {
 	Instruction *i;
@@ -262,6 +281,7 @@ int inum;
 %token RPT
 %token IF
 %token ELSE
+%token THEN
 %token DEL_BLOCO_ABRE
 %token DEL_BLOCO_FECHA
 %token <tipo> TIPO
@@ -349,7 +369,7 @@ read_statement:
 	};
 
 sel_statement:
-	/*IF '(' exp ')'{emitBackup();instruction_counter++;} statement
+	IF '(' exp ')' THEN {emitBackup();instruction_counter++;} statement
 	{
 		int i = instruction_counter;
 		instruction_counter = emitRestore();
@@ -357,7 +377,7 @@ sel_statement:
 		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
 		instruction_counter = i;
 	}
-	|*/ IF '(' exp ')'{emitBackup();instruction_counter++;} statement
+	| IF '(' exp ')'{emitBackup();instruction_counter++;} statement
 	{
 		int i = instruction_counter;
 		instruction_counter = emitRestore();

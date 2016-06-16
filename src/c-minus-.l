@@ -8,6 +8,7 @@
 ("abre"|"{")							{return DEL_BLOCO_ABRE;}
 ("fecha"|"}")							{return DEL_BLOCO_FECHA;}
 ("int")									{yylval.tipo= (char *) strdup(yytext);return TIPO;}
+("then")								{return THEN;}
 ("while")								{return RPT;}
 ("print")								{return PRINT;}
 ("read")								{return READ;}
