@@ -512,12 +512,17 @@ exp_add:
 		do_popExpression();
 		if(strcmp($OADD,"+")==0)
 		{
+			//ADD
 			emitInstruction(cria_Instruction(RO,ADD,ac,ac,ac1,FALSE));
 		}
 		else
 		{
+			//SUB
 			emitInstruction(cria_Instruction(RO,SUB,ac,ac,ac1,0));
 		}
+		
+		// Guarda valores na pilha caso existam mais de dois operandos
+		// Espera proximo operando para que trate os valores inseridos na pilha
 		Instruction inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
 		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
 		memoffset--;
