@@ -58,6 +58,9 @@ int cont_declr_tot = 0;
 int instruction_counter = 0;
 int memoffset = 0;
 
+int do_semantics = 1;
+int do_code = 1;
+
 extern yylineno;
 extern FILE *yyin;
 extern FILE *yyout;
@@ -136,16 +139,19 @@ void emitComment(char *com)
 }
 void emitInstruction(Instruction inst)
 {
-	switch(inst.kind)
+	if(do_code)
 	{
-		default:
-			break;
-		case RO:
-			fprintf(yyout,"%3d: %5s %d,%d,%d\n",instruction_counter++,inst.op,inst.r,inst.s,inst.t);
-			break;
-		case RM:
-			fprintf(yyout,"%3d: %5s %d,%d(%d)\n",instruction_counter++,inst.op,inst.r,inst.t,inst.s);
-			break;
+		switch(inst.kind)
+		{
+			default:
+				break;
+			case RO:
+				fprintf(yyout,"%3d: %5s %d,%d,%d\n",instruction_counter++,inst.op,inst.r,inst.s,inst.t);
+				break;
+			case RM:
+				fprintf(yyout,"%3d: %5s %d,%d(%d)\n",instruction_counter++,inst.op,inst.r,inst.t,inst.s);
+				break;
+		}
 	}
 }
 
@@ -289,7 +295,7 @@ int inum;
 %%
 /* Regras definindo a GLC e acoes correspondentes */
 programa:
-	{if(REPORT_TM) emitComment("START PROGRAM");} lista_declaracao {;};
+	{if(REPORT_TM && do_code) emitComment("START PROGRAM");} lista_declaracao {;};
 
 lista_declaracao:
 	declaracao {;}
@@ -302,33 +308,39 @@ declaracao:
 declaracao_var:
 	TIPO lista_declaracao_var 
 	{
-		cont_declr_tot += cont_declr_var_linha;
-		int i=0;
-		for(i=0;i<cont_declr_var_linha;i++) //update variavel com seu tipo
+		if(do_semantics)
 		{
-			Simbolo *s = (Simbolo*)vector_get(TS,cont_declr_tot - i - 1);
-			strcpy(s->tipo,$TIPO);
+			cont_declr_tot += cont_declr_var_linha;
+			int i=0;
+			for(i=0;i<cont_declr_var_linha;i++) //update variavel com seu tipo
+			{
+				Simbolo *s = (Simbolo*)vector_get(TS,cont_declr_tot - i - 1);
+				strcpy(s->tipo,$TIPO);
+			}
+			cont_declr_var_linha = 0;
 		}
-		cont_declr_var_linha = 0;
-		free($TIPO);
+			free($TIPO);
 	};
 
 lista_declaracao_var: 
 	ID ';' 
 	{
-		cria_Simbolo($ID,"var");
+		if(do_semantics)
+			cria_Simbolo($ID,"var");
 		free($ID);
 	}
 	| ID ',' lista_declaracao_var 
 	{
-		cria_Simbolo($ID,"var");
+		if(do_semantics)
+			cria_Simbolo($ID,"var");
 		free($ID);
 	};
 
 declaracao_fun:
 	ID '('')'
 	{
-		cria_Simbolo($ID,"fun");
+		if(do_semantics)
+			cria_Simbolo($ID,"fun");
 		free($ID);
 	} cmpst_statement{;};
 
@@ -362,7 +374,8 @@ print_statement:
 read_statement:
 	READ '(' ID ')' ';'
 	{
-		marcausado_Simbolo($ID,"var");
+		if(do_semantics)
+			marcausado_Simbolo($ID,"var");
 		emitInstruction(cria_Instruction(RO,IN,ac,0,0,FALSE));
 		storeVAR($ID);
 		free($ID);
@@ -412,7 +425,7 @@ exp_statement:
 	| ';' {;};
 
 exp:
-	ID {marcausado_Simbolo($ID,"var");} ASSIGN exp
+	ID {if(do_semantics) marcausado_Simbolo($ID,"var");} ASSIGN exp
 	{
 		if(ExpInstruction_list->length>=1)
 		{
@@ -556,7 +569,8 @@ fator:
 	| call {;}
 	| ID 
 	{
-		marcausado_Simbolo($ID,"var");
+		if(do_semantics)
+			marcausado_Simbolo($ID,"var");
 		loadVAR($ID);
 		free($ID);
 	}
@@ -569,7 +583,8 @@ fator:
 call:
 	ID '('')'
 	{
-		marcausado_Simbolo($ID,"fun");
+		if(do_semantics)
+			marcausado_Simbolo($ID,"fun");
 		free($ID);
 	};
 %%
@@ -602,17 +617,34 @@ int main (int argc, char *argv[])
 	yyin = fopen(infile_name,"r");
 	if(yyin)
 	{
-		if(argc < 3)
-			yyout = fopen(outfile_name,"w");
-		else
-			yyout = fopen(argv[2],"w");
-		if(REPORT_TM) emitComment("PRELUDIO");
-		emitInstruction(cria_Instruction(RM,LD,6,0,0,FALSE));
-		emitInstruction(cria_Instruction(RM,ST,0,0,0,FALSE));
+		do_semantics = 1;
+		do_code = 0;
 		sint_erro = yyparse();
+		rewind(yyin);
+		do_code = 1;
+		do_semantics = 0;
 		report(sint_erro);
-		if(REPORT_TM) emitComment("STOP");
-		emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
+		if(TS->length!=0 && !sint_erro)
+		{
+			if(do_code)
+			{
+				if(argc < 3)
+					yyout = fopen(outfile_name,"w");
+				else
+					yyout = fopen(argv[2],"w");
+				if(REPORT_TM) emitComment("PRELUDIO");
+				instruction_counter = 0;
+				memoffset = 0;
+				emitInstruction(cria_Instruction(RM,LD,6,0,0,FALSE));
+				emitInstruction(cria_Instruction(RM,ST,0,0,0,FALSE));
+				yyparse();
+				if(REPORT_TM) emitComment("STOP");
+				emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
+				printf("N instrucoes : %d\n",instruction_counter);
+				printf("N memoffset : %d\n",memoffset);
+				fclose(yyout);
+			}
+		}
 	}
 	else
 	{
@@ -620,7 +652,6 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 	fclose(yyin);
-	fclose(yyout);
 	destroy_vector(TS);
 	destroy_vector(ExpInstruction_list);
 	destroy_vector(Location_stack);
@@ -655,8 +686,6 @@ void report(int sint_erro)
 	if(REPORT)
 	{
 		printf("----REPORT SEMANTICO----\nPrograma com %d linhas\nHouve %d declr. \nHouve %d erro(s)\n",yylineno-1,cont_declr_tot,erros);
-		printf("N instrucoes : %d\n",instruction_counter+1);
-		printf("N memoffset : %d\n",memoffset);
 		printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tLINHA\n");
 		for(i=0;i<TS->length;i++)
 		{
