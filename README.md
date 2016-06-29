@@ -22,3 +22,29 @@ O programa pode ser compilado a partir do comando "make". O comando "make fclean
 Para executar utilize o comando "g-- \<input_file\> \[\<output_file\>\]"
 
 * \<output_file\> é opcional, caso não seja informado será utilizado o mesmo nome de \<input_file\> e extensão .tm
+
+Possui as seguintes otimizações:
+1.Manter temporários em registradores (ao invés de memória)
+2.Manter variáveis em registradores (ao invés de memória)
+3.Salto específico em comandos condicionais e de repetição
+4.Utilizar comandos de reg ao inves de memoria para troca de dados do ac para ac1
+
+Exemplo de código c--:
+```c
+/*Codigo linguagem c-- que computa o fatorial de um numero inteiro e positivo*/
+int x,fat;
+main ()
+{
+	read(x);
+	if( 0 < x ) then
+	{
+		fat = 1;
+		while(x != 0)
+		{
+			fat = fat * x;
+			x= x-1;
+		}
+		print(fat);
+	}
+}
+```
