@@ -69,6 +69,7 @@ extern FILE *yyout;
 vector_p TS;
 vector_p ExpInstruction_list;
 vector_p Location_stack;
+vector_p need_stack;
 
 typedef struct _instruction{
 	char op[5];
@@ -177,22 +178,12 @@ void do_popExpression()
 	{
 		i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
 		if(i->hasP)
-		{
 			++memoffset;
-		}
 		emitInstruction(*i);
 		i = NULL;
 		vector_remove(ExpInstruction_list,ExpInstruction_list->length-1);
 	}
-	if(memoffset <= MEMSTART)
-	{
-		emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset--,FALSE));
-		emitInstruction(cria_Instruction(RM,LD,ac1,mp,++memoffset,FALSE));
-	}
-	else
-	{
-		emitInstruction(cria_Instruction(RM,LDA,ac1,0,ac,FALSE));
-	}
+	emitInstruction(cria_Instruction(RM,LDA,ac1,0,ac,FALSE));
 	if(ExpInstruction_list->length>0)
 	{
 		i = (Instruction*)vector_get(ExpInstruction_list,ExpInstruction_list->length-1);
@@ -504,18 +495,21 @@ exp_simples:
 		emitInstruction(cria_Instruction(RM,LDA,pcreg,pcreg,1,FALSE));
 		emitInstruction(cria_Instruction(RM,LDC,ac,ac,1,FALSE));
 		Instruction inst;
-		if(memoffset <= MEMSTART)
+		if(need_stack->length>0)
 		{
-			inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
-			emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
+			if(memoffset <= MEMSTART)
+			{
+				inst = cria_Instruction(RM,LD,ac,mp,memoffset+3,TRUE); //Instrucao LD que deve ser inserida
+				emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset+3,FALSE));
+			}
+			else
+			{
+				inst = cria_Instruction(RM,LDA,ac,memoffset+4,0,TRUE);
+				emitInstruction(cria_Instruction(RM,LDA,memoffset+4,0,ac,FALSE));
+			}
+			memoffset--;
+			vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		}
-		else
-		{
-			inst = cria_Instruction(RM,LDA,ac,memoffset+4,0,TRUE);
-			emitInstruction(cria_Instruction(RM,LDA,memoffset+4,0,ac,FALSE));
-		}
-		memoffset--;
-		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		free($REL);
 	}
 	| exp_add {;};
@@ -538,18 +532,21 @@ exp_add:
 		// Guarda valores na pilha caso existam mais de dois operandos
 		// Espera proximo operando para que trate os valores inseridos na pilha
 		Instruction inst;
-		if(memoffset <= MEMSTART)
+		if(need_stack->length>0)
 		{
-			inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
-			emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
+			if(memoffset <= MEMSTART)
+			{
+				inst = cria_Instruction(RM,LD,ac,mp,memoffset+3,TRUE); //Instrucao LD que deve ser inserida
+				emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset+3,FALSE));
+			}
+			else
+			{
+				inst = cria_Instruction(RM,LDA,ac,memoffset+4,0,TRUE);
+				emitInstruction(cria_Instruction(RM,LDA,memoffset+4,0,ac,FALSE));
+			}
+			memoffset--;
+			vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		}
-		else
-		{
-			inst = cria_Instruction(RM,LDA,ac,memoffset+4,0,TRUE);
-			emitInstruction(cria_Instruction(RM,LDA,memoffset+4,0,ac,FALSE));
-		}
-		memoffset--;
-		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		free($OADD);
 	}
 	| term {;};
@@ -567,24 +564,27 @@ term:
 			emitInstruction(cria_Instruction(RO,DIV,ac,ac,ac1,FALSE));
 		}
 		Instruction inst;
-		if(memoffset <= MEMSTART)
+		if(need_stack->length>0)
 		{
-			inst = cria_Instruction(RM,LD,ac,mp,memoffset,TRUE); //Instrucao LD que deve ser inserida
-			emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset,FALSE));
+			if(memoffset <= MEMSTART)
+			{
+				inst = cria_Instruction(RM,LD,ac,mp,memoffset+3,TRUE); //Instrucao LD que deve ser inserida
+				emitInstruction(cria_Instruction(RM,ST,ac,mp,memoffset+3,FALSE));
+			}
+			else
+			{
+				inst = cria_Instruction(RM,LDA,ac,memoffset+4,0,TRUE);
+				emitInstruction(cria_Instruction(RM,LDA,memoffset+4,0,ac,FALSE));
+			}
+			memoffset--;
+			vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		}
-		else
-		{
-			inst = cria_Instruction(RM,LDA,ac,memoffset+4,0,TRUE);
-			emitInstruction(cria_Instruction(RM,LDA,memoffset+4,0,ac,FALSE));
-		}
-		memoffset--;
-		vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 		free($OMULT);
 	}
 	| fator {;};
 
 fator:
-	'(' exp ')' {;}
+	'('{int i = 1;vector_add(need_stack,(void*)&i,sizeof(int));} exp ')' {vector_remove(need_stack,need_stack->length-1);}
 	| call {;}
 	| ID 
 	{
@@ -618,6 +618,7 @@ int main (int argc, char *argv[])
 	TS = create_vector();
 	ExpInstruction_list = create_vector();
 	Location_stack = create_vector();
+	need_stack = create_vector();
 	char infile_name[100];
 	char outfile_name[100];
 	strcpy(infile_name,argv[1]);
@@ -674,6 +675,7 @@ int main (int argc, char *argv[])
 	destroy_vector(TS);
 	destroy_vector(ExpInstruction_list);
 	destroy_vector(Location_stack);
+	destroy_vector(need_stack);
 	return 0;
 }
 
