@@ -58,6 +58,7 @@ int cont_declr_var_linha = 0;
 int cont_declr_tot = 0;
 int instruction_counter = 0;
 int memoffset = 0;
+int factor = 1;
 
 int do_semantics = 1;
 int do_code = 1;
@@ -102,6 +103,7 @@ typedef struct _simbolo{
 	int qtd_usado;
 	char kind[6];
 	int linha;
+	int inreg;
 	int reg;
 }Simbolo;
 
@@ -119,6 +121,9 @@ int emitRestore();
 //TABELA DE SIMBOLOS MANAGER
 void insereTS(Simbolo s);
 int busca_Simbolo(char *name, char *kind);
+int hoare(int s, int n);
+void order(int s, int n);
+void setreg();
 
 //REPORTS
 void report(int sint_erro);
@@ -165,8 +170,12 @@ void storeVAR(char *id)
 	if(posicao!=-1)
 	{
 		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-		Instruction i = cria_Instruction(RM,ST,ac,gp,posicao,FALSE);
-		emitInstruction(i);
+		Instruction inst;
+		if(s->inreg)
+			inst = cria_Instruction(RM,LDA,s->reg,ac,0,FALSE);
+		else
+			inst = cria_Instruction(RM,ST,ac,gp,posicao,FALSE);
+		emitInstruction(inst);
 	}
 }
 
@@ -199,7 +208,11 @@ void loadVAR(char* id)
 {
 	int posicao = busca_Simbolo(id,"var");
 	Simbolo *s = (Simbolo *)vector_get(TS,posicao);
-	Instruction inst = cria_Instruction(RM,LD,ac,gp,posicao,FALSE);
+	Instruction inst;
+	if(s->inreg)
+		inst = cria_Instruction(RM,LDA,ac,s->reg,0,FALSE);
+	else
+		inst = cria_Instruction(RM,LD,ac,gp,posicao,FALSE);
 	vector_add(ExpInstruction_list,(void*)&inst,sizeof(Instruction));
 }
 
@@ -224,6 +237,8 @@ void cria_Simbolo(char * id,char *kind)
 		s.declarado = TRUE;
 		s.usado = FALSE;
 		s.qtd_usado=0;
+		s.inreg = 0;
+		s.reg = 0;
 		s.linha = yylineno;
 		insereTS(s);
 	}
@@ -245,7 +260,7 @@ void marcausado_Simbolo(char* id, char *kind)
 		strcpy(s.tipo,"undef");
 		s.declarado = FALSE;
 		s.usado = TRUE;
-		s.qtd_usado++;
+		s.qtd_usado += factor;
 		s.linha = yylineno;
 		cont_declr_tot++;
 		insereTS(s);
@@ -254,7 +269,7 @@ void marcausado_Simbolo(char* id, char *kind)
 	{
 		Simbolo *s = (Simbolo *)vector_get(TS,posicao);
 		s->usado = 1;
-		s->qtd_usado++;
+		s->qtd_usado += factor;
 	}
 }
 
@@ -270,6 +285,52 @@ int busca_Simbolo(char *name,char *kind)
 		}
 	}
 	return -1;
+}
+
+int hoare(int s, int n)
+{
+	Simbolo *x = (Simbolo*) vector_get(TS,s);
+    int i = s-1;
+    int j = n;
+    Simbolo *atual;
+    while(1){
+        do{
+            j--;
+           	atual = (Simbolo*) vector_get(TS,j);
+        }while(atual->qtd_usado > x->qtd_usado);
+        do{
+            i++;            
+            atual = (Simbolo*) vector_get(TS,i);
+        }while(atual->qtd_usado < x->qtd_usado);
+        if(i < j) vector_swap(TS,i, j);
+        else return j;
+    }
+}
+
+void order(int s,int n)
+{
+	int q;
+	if(s < n)
+	{
+		q = hoare(s,n);
+		order(s,q);
+		order(q+1,n);
+	}
+}
+
+void setreg()
+{
+	int i;
+	for(i=0;i<3;i++)
+	{
+		Simbolo *s = (Simbolo*)vector_get(TS,TS->length-i-1);
+		if(strcmp(s->kind,"var")==0)
+		{
+			s->inreg = 1;
+			s->reg = memoffset+4;
+			memoffset--;
+		}
+	}
 }
 
 %}
@@ -394,7 +455,7 @@ sel_statement:
 		emitInstruction(cria_Instruction(RM,JEQ,ac,pcreg,i - instruction_counter - 1,FALSE));
 		instruction_counter = i;
 	}
-	| IF '(' exp ')'{emitBackup();instruction_counter++;} statement
+	| IF '(' exp ')' {emitBackup();instruction_counter++;} statement
 	{
 		int i = instruction_counter;
 		instruction_counter = emitRestore();
@@ -411,7 +472,7 @@ sel_statement:
 		instruction_counter = i;
 	};
 rpt_statement:
-	RPT {emitBackup();}'(' exp ')'{emitBackup();instruction_counter++;} statement 
+	RPT {factor*=10;emitBackup();}'(' exp ')'{factor/=10;emitBackup();instruction_counter++;} statement 
 	{
 			int i = instruction_counter;
 			instruction_counter = emitRestore();
@@ -643,6 +704,8 @@ int main (int argc, char *argv[])
 		rewind(yyin);
 		do_code = 1;
 		do_semantics = 0;
+		instruction_counter = 0;
+		memoffset = 0;
 		report(sint_erro);
 		if(TS->length!=0 && !sint_erro)
 		{
@@ -653,8 +716,6 @@ int main (int argc, char *argv[])
 				else
 					yyout = fopen(argv[2],"w");
 				if(REPORT_TM) emitComment("PRELUDIO");
-				instruction_counter = 0;
-				memoffset = 0;
 				emitInstruction(cria_Instruction(RM,LD,6,0,0,FALSE));
 				emitInstruction(cria_Instruction(RM,ST,0,0,0,FALSE));
 				yyparse();
@@ -662,6 +723,7 @@ int main (int argc, char *argv[])
 				emitInstruction(cria_Instruction(RO,HALT,0,0,0,FALSE));
 				printf("N instrucoes : %d\n",instruction_counter);
 				printf("N memoffset : %d\n",memoffset);
+				printf("N variaveis em regs : %d\n",-memoffset);
 				fclose(yyout);
 			}
 		}
@@ -681,6 +743,8 @@ int main (int argc, char *argv[])
 
 void report(int sint_erro)
 {
+	order(0,TS->length);
+	setreg();
 	int i = 0;
 	for(i=0;i<TS->length;i++)
 	{
@@ -707,11 +771,11 @@ void report(int sint_erro)
 	if(REPORT)
 	{
 		printf("----REPORT SEMANTICO----\nPrograma com %d linhas\nHouve %d declr. \nHouve %d erro(s)\n",yylineno-1,cont_declr_tot,erros);
-		printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tQTD USO\tLINHA\n");
+		printf("KIND\tTIPO\tID\tDECLARADO\tUSADO\tQTD USO\tINREG\tREG\tLINHA\n");
 		for(i=0;i<TS->length;i++)
 		{
 			Simbolo *s = (Simbolo*)vector_get(TS,i);
-			printf("%s\t%s\t%s\t%d\t\t%d\t%d\t%d\n",s->kind,s->tipo,s->id,s->declarado,s->usado,s->qtd_usado,s->linha);
+			printf("%s\t%s\t%s\t%d\t\t%d\t%d\t%d\t%d\t%d\n",s->kind,s->tipo,s->id,s->declarado,s->usado,s->qtd_usado,s->inreg,s->reg,s->linha);
 		}
 		if(!erros)
 		{
