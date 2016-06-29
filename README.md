@@ -24,10 +24,10 @@ Para executar utilize o comando "g-- \<input_file\> \[\<output_file\>\]"
 * \<output_file\> é opcional, caso não seja informado será utilizado o mesmo nome de \<input_file\> e extensão .tm
 
 Possui as seguintes otimizações:
-1. Manter temporários em registradores (ao invés de memória)
-2. Manter variáveis em registradores (ao invés de memória)
-3. Salto específico em comandos condicionais e de repetição
-4. Utilizar comandos de reg ao inves de memoria para troca de dados do ac para ac1
+* Manter temporários em registradores (ao invés de memória)
+* Manter variáveis em registradores (ao invés de memória)
+* Salto específico em comandos condicionais e de repetição
+* Utilizar comandos de reg ao inves de memoria para troca de dados do ac para ac1
 
 Exemplo de código c--:
 ```c
