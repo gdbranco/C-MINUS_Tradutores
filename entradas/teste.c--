@@ -1,28 +1,9 @@
+/*teste*/
 int a,b,c;
-teste()
-{
-	print(2);
-	print(a);
-	read(a);
-	while (a < b)
-	{
-		a <- a + 1;
-	}
-	if ( a > c )
-	{
-		if(b > c)
-		{
-			a<-1;
-		}
-	}
-	else
-	{
-		a <- 2;
-	}
-}
 main()
 {
-	a <- (b / 2) + 3;
-	b <- (1/2) * 3 /(2/5);
-	teste();
+	a = 1;
+	b = 2;
+	c = ((a+b) / 3) + (a*b + 5);
+	print(c);
 }
